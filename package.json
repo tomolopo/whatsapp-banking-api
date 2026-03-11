@@ -2,11 +2,14 @@
   "name": "whatsapp-banking-api",
   "version": "1.0.0",
   "dependencies": {
-    "pg": "^8.11.0",
-    "uuid": "^9.0.0",
+    "@upstash/redis": "^1.25.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.0",
     "pdfkit": "^0.14.0",
-    "@upstash/redis": "^1.25.0"
+    "pg": "^8.11.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0"
   }
 }
