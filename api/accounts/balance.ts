@@ -12,8 +12,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const result = await pool.query(
-      "SELECT balance FROM accounts WHERE account_number=$1",
-      [account]
+     `
+SELECT
+COALESCE(SUM(credit),0) - COALESCE(SUM(debit),0) AS balance
+FROM ledger_entries
+WHERE account_id=$1
+`,
+[account]
+
     );
 
     if (result.rows.length === 0) {
