@@ -1,35 +1,55 @@
-import { pool } from "../../lib/db";
-import { v4 as uuid } from "uuid";
-
 import { VercelRequest, VercelResponse } from "@vercel/node";
+import { postTransaction, getAccountBalance } from "../../lib/ledger";
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
 
- const { from, to, amount } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
 
- const tx = uuid();
+  try {
 
- await pool.query("BEGIN");
+    const { fromAccount, toAccount, amount } = req.body;
 
- await pool.query(
-   "UPDATE accounts SET balance = balance - $1 WHERE account_number=$2",
-   [amount, from]
- );
+    if (!fromAccount || !toAccount || !amount) {
+      return res.status(400).json({
+        error: "missing parameters"
+      });
+    }
 
- await pool.query(
-   "UPDATE accounts SET balance = balance + $1 WHERE account_number=$2",
-   [amount, to]
- );
+    const balance = await getAccountBalance(fromAccount);
 
- await pool.query(
-   "INSERT INTO transactions(id,type,amount,status) VALUES($1,$2,$3,$4)",
-   [tx, "transfer", amount, "success"]
- );
+    if (balance < amount) {
 
- await pool.query("COMMIT");
+      return res.status(400).json({
+        error: "insufficient funds"
+      });
 
- res.json({ status: "success" });
+    }
+
+    const txId = await postTransaction(
+      fromAccount,
+      toAccount,
+      amount
+    );
+
+    res.json({
+      status: "success",
+      transactionId: txId
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "transfer failed"
+    });
+
+  }
 }
