@@ -2,7 +2,12 @@ import { pool } from "../../lib/db";
 import { redis } from "../../lib/redis";
 import { v4 as uuid } from "uuid";
 
-export default async function handler(req, res) {
+import { VercelRequest, VercelResponse } from "@vercel/node";
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
 
  if (req.method !== "POST") {
    return res.status(405).end();
