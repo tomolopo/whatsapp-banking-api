@@ -1,18 +1,36 @@
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import { pool } from "../../lib/db";
 
-import { VercelRequest, VercelResponse } from "@vercel/node";
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    const account = req.query.account;
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+    if (!account) {
+      return res.status(400).json({
+        error: "account parameter required"
+      });
+    }
 
- const { account } = req.query;
+    const result = await pool.query(
+      "SELECT balance FROM accounts WHERE account_number=$1",
+      [account]
+    );
 
- const result = await pool.query(
-   "SELECT balance FROM accounts WHERE account_number=$1",
-   [account]
- );
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "account not found"
+      });
+    }
 
- res.json(result.rows[0]);
+    res.json({
+      balance: result.rows[0].balance
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: "server error"
+    });
+  }
 }
