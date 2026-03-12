@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { pool } from "../../lib/db";
 import { postTransaction, getAccountBalance } from "../../lib/ledger";
 import { v4 as uuid } from "uuid";
+import { runFraudChecks } from "../../lib/fraud";
 
 export default async function handler(
  req: VercelRequest,
