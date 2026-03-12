@@ -6,6 +6,15 @@ export default async function handler(
  res: VercelResponse
 ){
 
+ // allow dashboard requests
+ res.setHeader("Access-Control-Allow-Origin", "*");
+ res.setHeader("Access-Control-Allow-Methods","GET,OPTIONS");
+ res.setHeader("Access-Control-Allow-Headers","Content-Type");
+
+ if(req.method === "OPTIONS"){
+  return res.status(200).end();
+ }
+
  const resource = req.query.resource;
 
  try{
@@ -16,57 +25,48 @@ export default async function handler(
     "SELECT * FROM banks ORDER BY name ASC"
    );
 
-   res.json(result.rows);
-
+   return res.json({banks:result.rows});
   }
 
-  else if(resource === "accounts"){
+  if(resource === "accounts"){
 
    const result = await pool.query(
     "SELECT * FROM accounts ORDER BY created_at DESC"
    );
 
-   res.json(result.rows);
-
+   return res.json({accounts:result.rows});
   }
 
-  else if(resource === "customers"){
+  if(resource === "customers"){
 
    const result = await pool.query(
     "SELECT * FROM users ORDER BY created_at DESC"
    );
 
-   res.json(result.rows);
-
+   return res.json({customers:result.rows});
   }
 
-  else if(resource === "transactions"){
+  if(resource === "transactions"){
 
    const result = await pool.query(
     "SELECT * FROM transactions ORDER BY created_at DESC"
    );
 
-   res.json(result.rows);
-
+   return res.json({transactions:result.rows});
   }
 
-  else if(resource === "fraud"){
+  if(resource === "fraud"){
 
    const result = await pool.query(
     "SELECT * FROM fraud_alerts ORDER BY created_at DESC"
    );
 
-   res.json(result.rows);
-
+   return res.json({alerts:result.rows});
   }
 
-  else{
-
-   res.status(400).json({
-    error:"invalid resource"
-   });
-
-  }
+  return res.status(400).json({
+   error:"invalid resource"
+  });
 
  }catch(err){
 
