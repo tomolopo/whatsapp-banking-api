@@ -1,29 +1,49 @@
-import { VercelRequest,VercelResponse } from "@vercel/node";
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import { pool } from "../../lib/db";
 import { generateStatement } from "../../lib/pdf";
 
-export default async function handler(req:VercelRequest,res:VercelResponse){
+export default async function handler(
+ req: VercelRequest,
+ res: VercelResponse
+){
 
- const account = req.query.account;
+ try{
 
- const result = await pool.query(
- `
- SELECT
- t.created_at,
- t.amount,
- t.type
- FROM transactions t
- JOIN ledger_entries l
- ON t.id = l.transaction_id
- WHERE l.account_id = $1
- `,
- [account]
- );
+  const accountNumber = req.query.account as string;
 
- const pdf = generateStatement(result.rows);
+  const account = await pool.query(
+   "SELECT id FROM accounts WHERE account_number=$1",
+   [accountNumber]
+  );
 
- res.setHeader("Content-Type","application/pdf");
+  const accountId = account.rows[0].id;
 
- pdf.pipe(res);
+  const tx = await pool.query(
+   `
+   SELECT
+   t.created_at,
+   t.amount,
+   t.type
+   FROM transactions t
+   JOIN ledger_entries l
+   ON t.id = l.transaction_id
+   WHERE l.account_id=$1
+   `,
+   [accountId]
+  );
+
+  const pdf = generateStatement(accountNumber,tx.rows);
+
+  res.setHeader("Content-Type","application/pdf");
+
+  pdf.pipe(res);
+
+ }catch(err){
+
+  console.error(err);
+
+  res.status(500).json({error:"statement generation failed"});
+
+ }
 
 }

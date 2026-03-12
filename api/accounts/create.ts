@@ -1,30 +1,45 @@
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import { pool } from "../../lib/db";
 import { v4 as uuid } from "uuid";
-import { VercelRequest, VercelResponse } from "@vercel/node";
-
-function generateAccount() {
- return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-}
-
+import { generateUniqueNUBAN } from "../../lib/nuban";
 
 export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+ req: VercelRequest,
+ res: VercelResponse
+){
 
- const { userId } = req.body;
+ try{
 
- const accountNumber = generateAccount();
+  const { userId } = req.body;
 
- const id = uuid();
+  const accountNumber = await generateUniqueNUBAN();
 
- await pool.query(
-   "INSERT INTO accounts(id,user_id,account_number) VALUES($1,$2,$3)",
-   [id, userId, accountNumber]
- );
+  const accountId = uuid();
 
- res.json({
+  await pool.query(
+   `
+   INSERT INTO accounts(id,user_id,account_number)
+   VALUES($1,$2,$3)
+   `,
+   [
+    accountId,
+    userId,
+    accountNumber
+   ]
+  );
+
+  res.json({
    accountNumber
- });
+  });
+
+ }catch(err){
+
+  console.error(err);
+
+  res.status(500).json({
+   error:"account creation failed"
+  });
+
+ }
 
 }

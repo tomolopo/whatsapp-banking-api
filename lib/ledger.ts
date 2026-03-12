@@ -3,90 +3,94 @@ import { v4 as uuid } from "uuid";
 
 /*
 Get balance from ledger
-Balance = credits - debits
 */
-export async function getAccountBalance(accountId: string) {
 
-  const result = await pool.query(
-    `
-    SELECT
-    COALESCE(SUM(credit),0) - COALESCE(SUM(debit),0) AS balance
-    FROM ledger_entries
-    WHERE account_id=$1
-    `,
-    [accountId]
-  );
+export async function getAccountBalance(accountId: string){
 
-  return result.rows[0].balance;
+ const result = await pool.query(
+ `
+ SELECT
+ COALESCE(SUM(credit),0) - COALESCE(SUM(debit),0) AS balance
+ FROM ledger_entries
+ WHERE account_id=$1
+ `,
+ [accountId]
+ );
+
+ return result.rows[0].balance;
+
 }
 
 /*
-Create ledger entries for a transfer
+Create ledger entries for transfer
 */
+
 export async function postTransaction(
-  fromAccount: string,
-  toAccount: string,
-  amount: number
-) {
+ fromAccountId: string,
+ toAccountId: string,
+ amount: number
+){
 
-  const txId = uuid();
+ const txId = uuid();
 
-  await pool.query("BEGIN");
+ await pool.query("BEGIN");
 
-  try {
+ try{
 
-    // create transaction record
-    await pool.query(
-      `
-      INSERT INTO transactions(id,type,amount,status,reference)
-      VALUES($1,$2,$3,$4,$5)
-      `,
-      [
-        txId,
-        "transfer",
-        amount,
-        "success",
-        `TX-${Date.now()}`
-      ]
-    );
+  await pool.query(
+   `
+   INSERT INTO transactions(id,type,amount,status,reference)
+   VALUES($1,$2,$3,$4,$5)
+   `,
+   [
+    txId,
+    "transfer",
+    amount,
+    "success",
+    `TX-${Date.now()}`
+   ]
+  );
 
-    // debit sender
-    await pool.query(
-      `
-      INSERT INTO ledger_entries(id,account_id,debit,credit,transaction_id)
-      VALUES($1,$2,$3,0,$4)
-      `,
-      [
-        uuid(),
-        fromAccount,
-        amount,
-        txId
-      ]
-    );
+  // debit
 
-    // credit receiver
-    await pool.query(
-      `
-      INSERT INTO ledger_entries(id,account_id,debit,credit,transaction_id)
-      VALUES($1,$2,0,$3,$4)
-      `,
-      [
-        uuid(),
-        toAccount,
-        amount,
-        txId
-      ]
-    );
+  await pool.query(
+   `
+   INSERT INTO ledger_entries(id,account_id,debit,credit,transaction_id)
+   VALUES($1,$2,$3,0,$4)
+   `,
+   [
+    uuid(),
+    fromAccountId,
+    amount,
+    txId
+   ]
+  );
 
-    await pool.query("COMMIT");
+  // credit
 
-    return txId;
+  await pool.query(
+   `
+   INSERT INTO ledger_entries(id,account_id,debit,credit,transaction_id)
+   VALUES($1,$2,0,$3,$4)
+   `,
+   [
+    uuid(),
+    toAccountId,
+    amount,
+    txId
+   ]
+  );
 
-  } catch (error) {
+  await pool.query("COMMIT");
 
-    await pool.query("ROLLBACK");
+  return txId;
 
-    throw error;
+ }catch(err){
 
-  }
+  await pool.query("ROLLBACK");
+
+  throw err;
+
+ }
+
 }
