@@ -10,13 +10,23 @@ export default async function handler(
 
  try{
 
-  if(resource === "accounts"){
+  if(resource === "banks"){
+
+   const result = await pool.query(
+    "SELECT * FROM banks ORDER BY name ASC"
+   );
+
+   res.json(result.rows);
+
+  }
+
+  else if(resource === "accounts"){
 
    const result = await pool.query(
     "SELECT * FROM accounts ORDER BY created_at DESC"
    );
 
-   res.json({accounts:result.rows});
+   res.json(result.rows);
 
   }
 
@@ -26,7 +36,7 @@ export default async function handler(
     "SELECT * FROM users ORDER BY created_at DESC"
    );
 
-   res.json({customers:result.rows});
+   res.json(result.rows);
 
   }
 
@@ -36,7 +46,7 @@ export default async function handler(
     "SELECT * FROM transactions ORDER BY created_at DESC"
    );
 
-   res.json({transactions:result.rows});
+   res.json(result.rows);
 
   }
 
@@ -46,30 +56,25 @@ export default async function handler(
     "SELECT * FROM fraud_alerts ORDER BY created_at DESC"
    );
 
-   res.json({alerts:result.rows});
-
-  }
-
-  else if(resource === "banks"){
-
-   const result = await pool.query(
-    "SELECT * FROM banks ORDER BY name ASC"
-   );
-
-   res.json({banks:result.rows});
+   res.json(result.rows);
 
   }
 
   else{
 
-   res.status(400).json({error:"invalid resource"});
+   res.status(400).json({
+    error:"invalid resource"
+   });
 
   }
 
  }catch(err){
 
   console.error(err);
-  res.status(500).json({error:"server error"});
+
+  res.status(500).json({
+   error:"server error"
+  });
 
  }
 
