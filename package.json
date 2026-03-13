@@ -10,7 +10,10 @@
     "jsonwebtoken": "^9.0.3",
     "pdfkit": "^0.14.0",
     "pg": "^8.11.0",
-    "uuid": "^9.0.0"
+    "swagger-ui-dist": "^5.32.0",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^9.0.0",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

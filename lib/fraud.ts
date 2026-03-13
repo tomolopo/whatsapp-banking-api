@@ -1,14 +1,22 @@
 import { pool } from "./db";
 import { v4 as uuid } from "uuid";
 
+/*
+ FRAUD CHECK ENGINE
+ Combines rule-based blocking + fraud risk scoring
+*/
+
 export async function runFraudChecks(
  accountId: string,
  amount: number
 ){
 
+ let riskScore = 0;
+
  /*
  RULE 1
  Velocity check
+ More than 5 transfers in 1 minute
  */
 
  const velocity = await pool.query(
@@ -38,6 +46,8 @@ export async function runFraudChecks(
   ]
   );
 
+  riskScore += 90;
+
   throw new Error("Fraud check failed: velocity limit exceeded");
 
  }
@@ -61,6 +71,8 @@ export async function runFraudChecks(
    "medium"
   ]
   );
+
+  riskScore += 40;
 
  }
 
@@ -98,10 +110,28 @@ export async function runFraudChecks(
   ]
   );
 
+  riskScore += 80;
+
   throw new Error("Fraud check failed: suspicious account activity");
 
  }
 
- return true;
+ /*
+ OPTIONAL RULE 4
+ Suspicious amount thresholds
+ */
+
+ if(amount > 500000){
+  riskScore += 20;
+ }
+
+ /*
+ FINAL RESULT
+ */
+
+ return {
+  passed: true,
+  riskScore
+ };
 
 }
