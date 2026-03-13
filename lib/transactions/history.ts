@@ -1,19 +1,20 @@
 import { pool } from "../db"
 
-export async function getTransactionHistory(account:string){
+export async function getTransactionHistory(
+ accountNumber:string
+){
 
- const result = await pool.query(`
-  SELECT
-   id,
-   amount,
-   status,
-   created_at
-  FROM transactions
-  WHERE account_number=$1
-  ORDER BY created_at DESC
+ const result = await pool.query(
+ `
+ SELECT *
+ FROM transactions
+ WHERE account_number=$1
+ ORDER BY created_at DESC
+ LIMIT 10
  `,
- [account]
+ [accountNumber]
  )
 
  return result.rows
+
 }

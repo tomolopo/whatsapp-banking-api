@@ -7,7 +7,8 @@ export async function getAccounts(){
    accounts.id,
    accounts.account_number,
    accounts.balance,
-   users.name,
+   users.first_name,
+   users.last_name,
    users.phone
   FROM accounts
   JOIN users ON users.id = accounts.user_id
@@ -15,4 +16,18 @@ export async function getAccounts(){
  `)
 
  return result.rows
+}
+
+export async function getBanks(){
+
+ const result = await pool.query(
+ `
+ SELECT code,name
+ FROM banks
+ ORDER BY name
+ `
+ )
+
+ return result.rows
+
 }
