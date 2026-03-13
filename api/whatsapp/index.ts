@@ -1,11 +1,16 @@
 import { VercelRequest, VercelResponse } from "@vercel/node"
 
+import { checkUser } from "../../lib/auth/checkUser"
 import { registerUser } from "../../lib/auth/registerUser"
 import { validatePin } from "../../lib/auth/validatePin"
+
 import { createAccount } from "../../lib/accounts/createAccount"
 import { getBalance } from "../../lib/accounts/balance"
+
 import { internalTransfer } from "../../lib/transfers/internal"
+
 import { getTransactionHistory } from "../../lib/transactions/history"
+
 import { getBanks } from "../../lib/admin/accounts"
 
 
@@ -28,6 +33,44 @@ export default async function handler(
  }
 
 
+
+ /*
+ =================================
+ CHECK USER
+ =================================
+ */
+
+ if(action === "check-user"){
+
+  const { phone } = req.body
+
+  if(!phone){
+
+   return res.status(400).json({
+    error:"phone required"
+   })
+
+  }
+
+  const user = await checkUser(phone)
+
+  if(!user){
+
+   return res.json({
+    exists:false
+   })
+
+  }
+
+  return res.json({
+   exists:true,
+   user
+  })
+
+ }
+
+
+
  /*
  =================================
  REGISTER USER
@@ -43,7 +86,6 @@ export default async function handler(
    address,
    pin
   } = req.body
-
 
   if(!phone || !pin){
 
@@ -144,7 +186,6 @@ export default async function handler(
    pin
   } = req.body
 
-
   if(!phone || !pin){
 
    return res.status(400).json({
@@ -152,7 +193,6 @@ export default async function handler(
    })
 
   }
-
 
   const validPin = await validatePin(
    phone,
@@ -167,13 +207,11 @@ export default async function handler(
 
   }
 
-
   const tx = await internalTransfer(
    fromAccount,
    toAccount,
    amount
   )
-
 
   return res.json({
    success:true,

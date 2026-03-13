@@ -1,17 +1,21 @@
 import { pool } from "../db"
 
-export async function getUserByPhone(phone:string){
+export async function checkUser(phone:string){
 
  const result = await pool.query(
- `
- SELECT *
- FROM users
- WHERE phone=$1
- `,
- [phone]
+  `
+  SELECT
+   id,
+   first_name,
+   last_name,
+   phone
+  FROM users
+  WHERE phone = $1
+  `,
+  [phone]
  )
 
- if(!result.rows.length){
+ if(result.rows.length === 0){
   return null
  }
 
