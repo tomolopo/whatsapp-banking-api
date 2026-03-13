@@ -1,80 +1,46 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { pool } from "../../lib/db";
+import { VercelRequest,VercelResponse } from "@vercel/node"
+
+import { getAccounts } from "../../lib/admin/accounts"
+import { getTransactions } from "../../lib/admin/transactions"
+import { getFraudAlerts } from "../../lib/admin/fraud"
 
 export default async function handler(
- req: VercelRequest,
- res: VercelResponse
+ req:VercelRequest,
+ res:VercelResponse
 ){
 
- // allow dashboard requests
- res.setHeader("Access-Control-Allow-Origin", "*");
- res.setHeader("Access-Control-Allow-Methods","GET,OPTIONS");
- res.setHeader("Access-Control-Allow-Headers","Content-Type");
-
- if(req.method === "OPTIONS"){
-  return res.status(200).end();
- }
-
- const resource = req.query.resource;
+ const resource = req.query.resource
 
  try{
 
-  if(resource === "banks"){
+ if(resource === "accounts"){
 
-   const result = await pool.query(
-    "SELECT * FROM banks ORDER BY name ASC"
-   );
+  return res.json(await getAccounts())
 
-   return res.json({banks:result.rows});
-  }
+ }
 
-  if(resource === "accounts"){
+ if(resource === "transactions"){
 
-   const result = await pool.query(
-    "SELECT * FROM accounts ORDER BY created_at DESC"
-   );
+  return res.json(await getTransactions())
 
-   return res.json({accounts:result.rows});
-  }
+ }
 
-  if(resource === "customers"){
+ if(resource === "fraud"){
 
-   const result = await pool.query(
-    "SELECT * FROM users ORDER BY created_at DESC"
-   );
+  return res.json(await getFraudAlerts())
 
-   return res.json({customers:result.rows});
-  }
+ }
 
-  if(resource === "transactions"){
-
-   const result = await pool.query(
-    "SELECT * FROM transactions ORDER BY created_at DESC"
-   );
-
-   return res.json({transactions:result.rows});
-  }
-
-  if(resource === "fraud"){
-
-   const result = await pool.query(
-    "SELECT * FROM fraud_alerts ORDER BY created_at DESC"
-   );
-
-   return res.json({alerts:result.rows});
-  }
-
-  return res.status(400).json({
-   error:"invalid resource"
-  });
+ res.status(400).json({
+  error:"Invalid admin resource"
+ })
 
  }catch(err){
 
-  console.error(err);
+ const msg =
+  err instanceof Error ? err.message : "Unknown error"
 
-  res.status(500).json({
-   error:"server error"
-  });
+ res.status(500).json({error:msg})
 
  }
 

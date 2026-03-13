@@ -1,31 +1,32 @@
-import PDFDocument from "pdfkit";
+import PDFDocument from "pdfkit"
+import { PassThrough } from "stream"
 
-export function generateStatement(account:string,transactions:any[]){
+export async function generatePdf(data:any){
 
- const doc = new PDFDocument();
+ const doc = new PDFDocument()
 
- doc.fontSize(18).text("Taiwo Digital Bank");
+ const stream = new PassThrough()
 
- doc.moveDown();
+ const buffers:any[] = []
 
- doc.text(`Account Number: ${account}`);
+ doc.pipe(stream)
 
- doc.moveDown();
+ stream.on("data",buffers.push.bind(buffers))
 
- doc.text("Transactions");
+ doc.fontSize(20).text("Account Statement")
 
- doc.moveDown();
+ doc.moveDown()
 
- transactions.forEach(tx=>{
+ doc.text(JSON.stringify(data,null,2))
 
-  doc.text(
-  `${tx.created_at}  ${tx.type}  ₦${tx.amount}`
-  );
+ doc.end()
 
- });
+ return new Promise((resolve)=>{
 
- doc.end();
+  stream.on("end",()=>{
+   resolve(Buffer.concat(buffers))
+  })
 
- return doc;
+ })
 
 }
