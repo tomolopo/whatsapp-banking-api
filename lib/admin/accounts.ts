@@ -1,5 +1,29 @@
 import { pool } from "../db"
 
+
+export async function getCustomers() {
+ try {
+
+  const result = await pool.query(`
+   SELECT
+    id,
+    first_name,
+    last_name,
+    address,
+    phone,
+    created_at
+   FROM users
+   ORDER BY created_at DESC
+  `)
+
+  return result.rows
+
+ } catch (error) {
+  console.error("getCustomers error:", error)
+  throw error
+ }
+}
+
 export async function getAccounts() {
  try {
 
@@ -42,25 +66,3 @@ export async function getBanks() {
  }
 }
 
-export async function getCustomers() {
- try {
-
-  const result = await pool.query(`
-   SELECT
-    id,
-    first_name,
-    last_name,
-    address,
-    phone,
-    created_at
-   FROM users
-   ORDER BY created_at DESC
-  `)
-
-  return result.rows
-
- } catch (error) {
-  console.error("getCustomers error:", error)
-  throw error
- }
-}
