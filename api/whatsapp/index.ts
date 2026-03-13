@@ -6,6 +6,7 @@ import { createAccount } from "../../lib/accounts/createAccount"
 import { getBalance } from "../../lib/accounts/balance"
 import { internalTransfer } from "../../lib/transfers/internal"
 import { getTransactionHistory } from "../../lib/transactions/history"
+import { initSession } from "../../lib/session/initSession"
 
 export default async function handler(
  req: VercelRequest,
@@ -31,6 +32,15 @@ export default async function handler(
   }
 
   const body = req.body || {}
+
+  // INIT SESSION
+if(action === "initSession"){
+
+ const result = await initSession(body.phone)
+
+ return res.json(result)
+
+}
 
   // CHECK USER
   if(action === "checkUser"){
