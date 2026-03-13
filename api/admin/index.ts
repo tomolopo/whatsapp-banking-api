@@ -1,46 +1,70 @@
-import { VercelRequest,VercelResponse } from "@vercel/node"
+import { VercelRequest, VercelResponse } from "@vercel/node"
 
-import { getAccounts } from "../../lib/admin/accounts"
-import { getTransactions } from "../../lib/admin/transactions"
-import { getFraudAlerts } from "../../lib/admin/fraud"
+import { getCustomers } from "../../lib/admin/accounts"
+import { getBanks } from "../../lib/admin/accounts"
+import { pool } from "../../lib/db"
 
 export default async function handler(
- req:VercelRequest,
- res:VercelResponse
+ req: VercelRequest,
+ res: VercelResponse
 ){
-
- const resource = req.query.resource
 
  try{
 
- if(resource === "accounts"){
+ const resource = req.query.resource as string
 
-  return res.json(await getAccounts())
+ if(!resource){
 
- }
-
- if(resource === "transactions"){
-
-  return res.json(await getTransactions())
+  return res.status(400).json({
+   error:"resource parameter required"
+  })
 
  }
 
- if(resource === "fraud"){
+ /*
+ =========================
+ CUSTOMERS
+ =========================
+ */
 
-  return res.json(await getFraudAlerts())
+ if(resource === "customers"){
+
+  const customers = await getCustomers()
+
+  return res.json({
+   customers
+  })
 
  }
 
- res.status(400).json({
-  error:"Invalid admin resource"
+ /*
+ =========================
+ BANKS
+ =========================
+ */
+
+ if(resource === "banks"){
+
+  const banks = await getBanks()
+
+  return res.json({
+   banks
+  })
+
+ }
+
+ return res.status(404).json({
+  error:"Unknown resource"
  })
 
  }catch(err){
 
- const msg =
-  err instanceof Error ? err.message : "Unknown error"
+ const message =
+ err instanceof Error ? err.message : "Unknown error"
 
- res.status(500).json({error:msg})
+ return res.status(500).json({
+  error: message
+ })
 
  }
 
