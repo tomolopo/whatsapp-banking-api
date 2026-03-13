@@ -1,239 +1,78 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
   title: WhatsApp Banking API
-  description: API used by Infobip Answers to power WhatsApp banking operations
   version: 1.0.0
+  description: API used by Infobip Answers chatbot
 
 servers:
   - url: https://whatsapp-banking-api.vercel.app
 
 paths:
 
-  /api/whatsapp/register:
+  /api/whatsapp:
     post:
-      summary: Register a new WhatsApp banking user
+      summary: WhatsApp Banking Router
+      description: |
+        This endpoint handles all WhatsApp banking actions.
+        Use the `action` query parameter to specify operation.
+
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum:
+              - register
+              - balance
+              - banks
+              - account-name
+              - request-transfer
+              - confirm-transfer
+              - receipt
+
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - phone
-                - name
               properties:
+
                 phone:
                   type: string
-                  example: "+2348012345678"
+                  example: "2348012345678"
+
                 name:
                   type: string
                   example: "John Doe"
 
-      responses:
-        "200":
-          description: Account created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  accountNumber:
-                    type: string
-                    example: "2039484756"
-
-  /api/whatsapp/balance:
-    post:
-      summary: Check account balance
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - phone
-              properties:
-                phone:
-                  type: string
-                  example: "+2348012345678"
-
-      responses:
-        "200":
-          description: Balance returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  found:
-                    type: boolean
-                  balance:
-                    type: number
-                    example: 35000
-                  accountNumber:
-                    type: string
-                    example: "2039484756"
-
-  /api/whatsapp/banks:
-    get:
-      summary: Get supported bank list
-      responses:
-        "200":
-          description: Bank list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  banks:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        code:
-                          type: string
-                          example: "058"
-                        name:
-                          type: string
-                          example: "Access Bank"
-
-  /api/whatsapp/account-name:
-    post:
-      summary: Resolve account number to account name
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - accountNumber
-              properties:
                 accountNumber:
                   type: string
-                  example: "2039484756"
+                  example: "0123456789"
 
-      responses:
-        "200":
-          description: Account name lookup
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  found:
-                    type: boolean
-                  name:
-                    type: string
-                    example: "John Doe"
-
-  /api/whatsapp/request-transfer:
-    post:
-      summary: Initiate transfer and generate OTP
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - phone
-                - fromAccount
-                - toAccount
-                - amount
-              properties:
-                phone:
-                  type: string
                 fromAccount:
                   type: string
+                  example: "0123456789"
+
                 toAccount:
                   type: string
+                  example: "0987654321"
+
                 amount:
                   type: number
-                  example: 10000
+                  example: 5000
 
-      responses:
-        "200":
-          description: OTP generated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  otp:
-                    type: string
-                    example: "482193"
-
-  /api/whatsapp/confirm-transfer:
-    post:
-      summary: Confirm transfer with OTP
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - phone
-                - otp
-              properties:
-                phone:
-                  type: string
                 otp:
                   type: string
-                  example: "482193"
+                  example: "123456"
 
       responses:
-        "200":
-          description: Transfer result
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  txId:
-                    type: string
-                  riskScore:
-                    type: number
 
-  /api/whatsapp/receipt:
-    post:
-      summary: Generate transfer receipt message
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - phone
-                - amount
-                - toAccount
-              properties:
-                phone:
-                  type: string
-                amount:
-                  type: number
-                toAccount:
-                  type: string
-
-      responses:
         "200":
-          description: WhatsApp receipt text
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: |
-                      Transfer Successful
-                      Amount: ₦10000
-                      Recipient: 2039484756
+          description: Successful response
+
+        "400":
+          description: Invalid request
+
+        "500":
+          description: Server error
