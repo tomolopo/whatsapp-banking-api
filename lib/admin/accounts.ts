@@ -10,13 +10,12 @@ CUSTOMERS (SEARCH + PAGINATION)
 
 export async function getCustomers(
  search: string = "",
- page: number = 1,
- limit: number = 10
+ limit: number = 10,
+ offset: number = 0
 ){
 
- const offset = (page - 1) * limit
-
  const result = await pool.query(
+
  `
  SELECT
   users.id,
@@ -29,21 +28,18 @@ export async function getCustomers(
   accounts.account_number,
   accounts.balance,
 
-  COUNT(transactions.id) AS transaction_count,
-
-  EXISTS (
-   SELECT 1
-   FROM fraud_flags
-   WHERE fraud_flags.account_id = accounts.id
-  ) AS has_fraud_flag
+  COUNT(transactions.id) AS transaction_count
 
  FROM users
 
  LEFT JOIN accounts
-  ON accounts.user_id = users.id
+ ON accounts.user_id = users.id
+
+ LEFT JOIN ledger_entries
+ ON ledger_entries.account_id = accounts.id
 
  LEFT JOIN transactions
-  ON transactions.account_number = accounts.account_number
+ ON transactions.id = ledger_entries.transaction_id
 
  WHERE
   users.first_name ILIKE $1
@@ -60,7 +56,9 @@ export async function getCustomers(
  LIMIT $2
  OFFSET $3
  `,
- [`%${search}%`, limit, offset]
+
+ [`%${search}%`,limit,offset]
+
  )
 
  return result.rows
