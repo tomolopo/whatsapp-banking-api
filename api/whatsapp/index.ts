@@ -1,16 +1,10 @@
 import { VercelRequest, VercelResponse } from "@vercel/node"
 
-import { registerUser } from "../../lib/auth/registerUser"
-import { validatePin } from "../../lib/auth/validatePin"
+import { getCustomers, getAccounts, getBanks } from "../../lib/admin/accounts"
+import { getFraudAlerts } from "../../lib/admin/fraud"
+import { getTransactions } from "../../lib/admin/transactions"
 
-import { createAccount } from "../../lib/accounts/createAccount"
-import { getBalance } from "../../lib/accounts/balance"
-
-import { internalTransfer } from "../../lib/transfers/internal"
-
-import { getTransactionHistory } from "../../lib/transactions/history"
-
-import { getBanks } from "../../lib/admin/accounts"
+import { pool } from "../../lib/db"
 
 
 
@@ -21,216 +15,178 @@ export default async function handler(
 
  try{
 
- const action = req.query.action as string
+ const resource = req.query.resource as string
 
- if(!action){
+ if(!resource){
 
   return res.status(400).json({
-   error:"action parameter required"
+   error:"resource parameter required"
   })
 
  }
 
  /*
- =============================
- REGISTER USER
- =============================
+ ===================================
+ CUSTOMERS LIST
+ ===================================
  */
 
- if(action === "register"){
+ if(resource === "customers"){
 
-  const {
-   phone,
-   firstName,
-   lastName,
-   address,
-   pin
-  } = req.body
+  const search = (req.query.search as string) || ""
+  const page = Number(req.query.page || 1)
+  const limit = Number(req.query.limit || 10)
 
-  if(!phone || !pin){
-
-   return res.status(400).json({
-    error:"phone and pin required"
-   })
-
-  }
-
-  if(pin.length !== 4){
-
-   return res.status(400).json({
-    error:"PIN must be 4 digits"
-   })
-
-  }
-
-  const user = await registerUser(
-   phone,
-   firstName,
-   lastName,
-   address,
-   pin
+  const customers = await getCustomers(
+   search,
+   page,
+   limit
   )
 
   return res.json({
-   success:true,
-   user
+   customers
   })
 
  }
 
 
  /*
- =============================
- CREATE ACCOUNT
- =============================
+ ===================================
+ SINGLE CUSTOMER PROFILE
+ ===================================
  */
 
- if(action === "create-account"){
+ if(resource === "customer"){
 
-  const { phone } = req.body
+  const id = req.query.id as string
 
-  if(!phone){
+  if(!id){
 
    return res.status(400).json({
-    error:"phone required"
+    error:"customer id required"
    })
 
   }
 
-  const account = await createAccount(phone)
+  const result = await pool.query(
+  `
+  SELECT
+   users.id,
+   users.first_name,
+   users.last_name,
+   users.phone,
+   users.address,
+   users.created_at,
 
-  return res.json({
-   success:true,
-   account
-  })
+   accounts.account_number,
+   accounts.balance
 
- }
+  FROM users
 
+  LEFT JOIN accounts
+   ON accounts.user_id = users.id
 
- /*
- =============================
- GET BALANCE
- =============================
- */
-
- if(action === "balance"){
-
-  const { accountNumber } = req.body
-
-  const balance = await getBalance(accountNumber)
-
-  return res.json({
-   success:true,
-   balance
-  })
-
- }
-
-
- /*
- =============================
- TRANSFER
- =============================
- */
-
- if(action === "transfer"){
-
-  const {
-   phone,
-   fromAccount,
-   toAccount,
-   amount,
-   pin
-  } = req.body
-
-
-  if(!phone || !pin){
-
-   return res.status(400).json({
-    error:"phone and pin required"
-   })
-
-  }
-
-
-  const validPin = await validatePin(phone,pin)
-
-  if(!validPin){
-
-   return res.status(403).json({
-    error:"Invalid PIN"
-   })
-
-  }
-
-
-  const tx = await internalTransfer(
-   fromAccount,
-   toAccount,
-   amount
+  WHERE users.id=$1
+  `,
+  [id]
   )
 
+  if(!result.rows.length){
+
+   return res.status(404).json({
+    error:"Customer not found"
+   })
+
+  }
 
   return res.json({
-   success:true,
-   transaction:tx
+   customer: result.rows[0]
   })
 
  }
 
 
  /*
- =============================
- TRANSACTION HISTORY
- =============================
+ ===================================
+ ACCOUNTS
+ ===================================
  */
 
- if(action === "transactions"){
+ if(resource === "accounts"){
 
-  const { accountNumber } = req.body
-
-  const tx = await getTransactionHistory(accountNumber)
+  const accounts = await getAccounts()
 
   return res.json({
-   success:true,
-   transactions:tx
+   accounts
   })
 
  }
 
 
  /*
- =============================
+ ===================================
+ TRANSACTIONS
+ ===================================
+ */
+
+ if(resource === "transactions"){
+
+  const transactions = await getTransactions()
+
+  return res.json({
+   transactions
+  })
+
+ }
+
+
+ /*
+ ===================================
+ FRAUD ALERTS
+ ===================================
+ */
+
+ if(resource === "fraud"){
+
+  const fraud = await getFraudAlerts()
+
+  return res.json({
+   fraud
+  })
+
+ }
+
+
+ /*
+ ===================================
  BANK LIST
- =============================
+ ===================================
  */
 
- if(action === "banks"){
+ if(resource === "banks"){
 
   const banks = await getBanks()
 
   return res.json({
-   success:true,
    banks
   })
 
  }
 
 
-
  return res.status(404).json({
-  error:"Unknown action"
+  error:"Unknown resource"
  })
 
 
  }catch(err){
 
-  const message =
-  err instanceof Error ? err.message : "Unknown error"
+ const message =
+ err instanceof Error ? err.message : "Unknown error"
 
-  return res.status(500).json({
-   error:message
-  })
+ return res.status(500).json({
+  error: message
+ })
 
  }
 
