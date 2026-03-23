@@ -7,6 +7,7 @@ import { getBalance } from "../../lib/accounts/balance"
 import { internalTransfer } from "../../lib/transfers/internal"
 import { getTransactionHistory } from "../../lib/transactions/history"
 import { initSession } from "../../lib/session/initSession"
+import { executeTransfer } from "../../lib/transfers/transfers"
 
 export default async function handler(
  req: VercelRequest,
@@ -85,17 +86,31 @@ if(action === "initSession"){
   }
 
   // TRANSFER
-  if(action === "transfer"){
+  // TRANSFER
+if(action === "transfer"){
 
-   const result = await internalTransfer(
-    body.fromAccount,
-    body.toAccount,
-    body.amount
-    )
+ const { 
+  fromAccount,
+  toAccount,
+  amount,
+  phone,
+  pin
+ } = body
 
-   return res.json(result)
+ const idempotencyKey = req.headers["idempotency-key"] as string
 
-  }
+ const result = await executeTransfer(
+  fromAccount,
+  toAccount,
+  amount,
+  phone,
+  pin,
+  idempotencyKey
+ )
+
+ return res.json(result)
+
+}
 
   // TRANSACTION HISTORY
   if(action === "transactions"){

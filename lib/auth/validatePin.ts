@@ -1,27 +1,43 @@
 import { pool } from "../db"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs" // safer for Vercel
 
 export async function validatePin(
  phone: string,
  pin: string
 ){
 
- const result = await pool.query(
+ if(!phone || !pin){
+  throw new Error("Phone and PIN required")
+ }
+
+ const user = await pool.query(
  `
- SELECT pin_hash
+ SELECT id, pin_hash
  FROM users
  WHERE phone=$1
  `,
  [phone]
  )
 
- if(!result.rows.length){
-  return false
+ if(!user.rows.length){
+  throw new Error("User not found")
  }
 
- const hash = result.rows[0].pin_hash
+ const hash = user.rows[0].pin_hash
 
- const valid = await bcrypt.compare(pin,hash)
+ if(!hash){
+  throw new Error("PIN not set")
+ }
 
- return valid
+ const valid = await bcrypt.compare(pin, hash)
+
+ if(!valid){
+  throw new Error("Invalid PIN")
+ }
+
+ return {
+  valid: true,
+  userId: user.rows[0].id
+ }
+
 }
