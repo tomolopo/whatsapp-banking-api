@@ -27,15 +27,19 @@ export default async function handler(
   return res.status(200).end()
  }
 
- // 🔗 CORRELATION ID (VERY IMPORTANT)
+ // 🔗 CORRELATION ID
  const requestId = (req.headers["x-request-id"] as string) || uuid()
 
  try{
 
-  // 📥 LOG REQUEST
+  // ✅ SAFE LOGGER INPUT (FIXED)
   logRequest({
-   ...req,
-   requestId
+   requestId,
+   method: req.method,
+   url: req.url,
+   query: req.query || {},
+   body: req.body || {},
+   headers: req.headers || {}
   })
 
   const action = req.query.action as string
@@ -55,17 +59,17 @@ export default async function handler(
 
   let response:any
 
-  // 🧠 INIT SESSION
+  // INIT SESSION
   if(action === "initSession"){
-   response = await initSession(body.phone)
+   response = await initSession(body.phone as string)
   }
 
-  // 👤 CHECK USER
+  // CHECK USER
   else if(action === "checkUser"){
-   response = await checkUser(body.phone)
+   response = await checkUser(body.phone as string)
   }
 
-  // 📝 REGISTER
+  // REGISTER
   else if(action === "register"){
    response = await registerUser(
     body.phone,
@@ -76,21 +80,23 @@ export default async function handler(
    )
   }
 
-  // 🏦 CREATE ACCOUNT
+  // CREATE ACCOUNT
   else if(action === "createAccount"){
    response = await createAccount(body.phone)
   }
 
-  // 💰 BALANCE
+  // BALANCE
   else if(action === "balance"){
    response = await getBalance(body.phone)
   }
 
-  // 🚀 DIRECT TRANSFER (NO OTP)
+  // DIRECT TRANSFER
   else if(action === "transfer"){
+
    const { fromAccount, toAccount, amount, phone, pin } = body
 
-   const idempotencyKey = req.headers["idempotency-key"] as string
+   const idempotencyKey =
+    req.headers["idempotency-key"] as string
 
    response = await executeTransfer(
     fromAccount,
@@ -102,22 +108,20 @@ export default async function handler(
    )
   }
 
-  // 🔐 INITIATE TRANSFER (WITH OTP)
+  // OTP FLOW
   else if(action === "initiateTransfer"){
    response = await initiateTransfer(body)
   }
 
-  // ✅ CONFIRM TRANSFER (OTP + EXECUTE)
   else if(action === "confirmTransfer"){
    response = await confirmTransfer(body)
   }
 
-  // 📜 TRANSACTIONS
+  // TRANSACTIONS
   else if(action === "transactions"){
    response = await getTransactionHistory(body.phone)
   }
 
-  // ❌ UNKNOWN ACTION
   else{
    return res.status(404).json({
     success:false,

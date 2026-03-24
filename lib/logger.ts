@@ -1,25 +1,36 @@
-export function logRequest(req:any){
+// lib/logger.ts
 
- const safeBody = { ...(req.body || {}) }
+export function logRequest(req: any){
+
+ // 🛡️ SAFE FALLBACKS (VERY IMPORTANT)
+ const headers = req?.headers || {}
+ const body = req?.body || {}
+ const query = req?.query || {}
 
  // 🔐 MASK SENSITIVE DATA
+ const safeBody = { ...body }
+
  if(safeBody.pin) safeBody.pin = "***"
  if(safeBody.otp) safeBody.otp = "***"
 
+ // 🔑 SAFE HEADER ACCESS (NO CRASH)
+ const idempotencyKey =
+  headers?.["idempotency-key"] ||
+  headers?.["Idempotency-Key"] ||
+  null
+
  console.log("📥 REQUEST:", {
-  requestId: req.requestId,
-  method: req.method,
-  url: req.url,
-  query: req.query,
+  requestId: req?.requestId || null,
+  method: req?.method || null,
+  url: req?.url || null,
+  query,
   body: safeBody,
-  headers: {
-   "idempotency-key": req.headers?.["idempotency-key"] || null
-  }
+  idempotencyKey
  })
 
 }
 
-export function logResponse(data:any){
+export function logResponse(data: any){
 
  console.log("📤 RESPONSE:", data)
 
