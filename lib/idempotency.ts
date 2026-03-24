@@ -3,12 +3,16 @@ import { pool } from "./db"
 export async function checkIdempotency(key: string){
 
  if(!key){
-  throw new Error("Missing idempotency key")
+  return null // ✅ DO NOT CRASH
  }
 
  const existing = await pool.query(
-  `SELECT response FROM idempotency_keys WHERE key=$1`,
-  [key]
+ `
+ SELECT response
+ FROM idempotency_keys
+ WHERE key=$1
+ `,
+ [key]
  )
 
  if(existing.rows.length){
@@ -16,10 +20,16 @@ export async function checkIdempotency(key: string){
  }
 
  return null
-
 }
 
-export async function saveIdempotency(key: string, response: any){
+export async function saveIdempotency(
+ key: string,
+ response: any
+){
+
+ if(!key){
+  return // ✅ skip silently
+ }
 
  await pool.query(
  `
@@ -28,5 +38,4 @@ export async function saveIdempotency(key: string, response: any){
  `,
  [key, JSON.stringify(response)]
  )
-
 }

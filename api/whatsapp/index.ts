@@ -115,7 +115,7 @@ export default async function handler(
 
    const idempotencyKey =
     (req.headers["idempotency-key"] ||
-     req.headers["Idempotency-Key"]) as string
+     req.headers["Idempotency-Key"]) as string || uuid()
 
    response = await executeTransfer(
     fromAccount,
