@@ -16,6 +16,8 @@ import { confirmTransferDetails } from "../../lib/transfers/confirmTransfer"
 
 import { logRequest, logResponse } from "../../lib/logger"
 
+import { changePin } from "../../lib/auth/changePin"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -141,6 +143,17 @@ export default async function handler(
   else if(action === "transactions"){
    response = await getTransactionHistory(body.phone)
   }
+
+  // CHANGE PIN
+  else if(action === "changePin"){
+
+ response = await changePin(
+  body.phone,
+  body.oldPin,
+  body.newPin
+ )
+
+}
 
   // ❌ UNKNOWN ACTION
   else{
