@@ -18,6 +18,8 @@ import { logRequest, logResponse } from "../../lib/logger"
 
 import { changePin } from "../../lib/auth/changePin"
 
+import { pool } from "../../lib/db"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -152,6 +154,38 @@ export default async function handler(
   body.oldPin,
   body.newPin
  )
+
+}
+
+//RESET PIN
+
+else if(action === "resetPin"){
+
+ const bcrypt = require("bcryptjs")
+
+ const { phone, newPin } = body
+
+ if(!phone || !newPin){
+  throw new Error("phone and newPin required")
+ }
+
+ const hash = await bcrypt.hash(newPin, 10)
+
+ await pool.query(
+ `
+ UPDATE users
+ SET pin_hash=$1,
+     pin_attempts=0,
+     pin_locked_until=NULL
+ WHERE phone=$2
+ `,
+ [hash, phone]
+ )
+
+ response = {
+  success: true,
+  message: "PIN reset successfully"
+ }
 
 }
 
