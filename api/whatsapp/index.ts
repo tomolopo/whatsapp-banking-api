@@ -11,6 +11,9 @@ import { initSession } from "../../lib/session/initSession"
 import { executeTransfer } from "../../lib/transfers/transfers"
 import { initiateTransfer, confirmTransfer } from "../../lib/transfers/transferWithOTP"
 
+import { resolveAccount } from "../../lib/transfers/resolveAccount"
+import { confirmTransferDetails } from "../../lib/transfers/confirmTransfer"
+
 import { logRequest, logResponse } from "../../lib/logger"
 
 export default async function handler(
@@ -32,7 +35,7 @@ export default async function handler(
 
  try{
 
-  // ✅ SAFE LOGGER INPUT (FIXED)
+  // 📥 SAFE LOGGING
   logRequest({
    requestId,
    method: req.method,
@@ -59,17 +62,17 @@ export default async function handler(
 
   let response:any
 
-  // INIT SESSION
+  // 🧠 INIT SESSION
   if(action === "initSession"){
    response = await initSession(body.phone as string)
   }
 
-  // CHECK USER
+  // 👤 CHECK USER
   else if(action === "checkUser"){
    response = await checkUser(body.phone as string)
   }
 
-  // REGISTER
+  // 📝 REGISTER USER
   else if(action === "register"){
    response = await registerUser(
     body.phone,
@@ -80,23 +83,39 @@ export default async function handler(
    )
   }
 
-  // CREATE ACCOUNT
+  // 🏦 CREATE ACCOUNT
   else if(action === "createAccount"){
    response = await createAccount(body.phone)
   }
 
-  // BALANCE
+  // 💰 BALANCE
   else if(action === "balance"){
    response = await getBalance(body.phone)
   }
 
-  // DIRECT TRANSFER
+  // 🔍 RESOLVE ACCOUNT (NEW)
+  else if(action === "resolveAccount"){
+   response = await resolveAccount(
+    body.accountNumber as string
+   )
+  }
+
+  // 🧠 CONFIRM TRANSFER DETAILS (NEW)
+  else if(action === "confirmTransferDetails"){
+   response = await confirmTransferDetails(
+    body.accountNumber as string,
+    Number(body.amount)
+   )
+  }
+
+  // 💸 DIRECT TRANSFER
   else if(action === "transfer"){
 
    const { fromAccount, toAccount, amount, phone, pin } = body
 
    const idempotencyKey =
-    req.headers["idempotency-key"] as string
+    (req.headers["idempotency-key"] ||
+     req.headers["Idempotency-Key"]) as string
 
    response = await executeTransfer(
     fromAccount,
@@ -108,20 +127,22 @@ export default async function handler(
    )
   }
 
-  // OTP FLOW
+  // 🔐 INITIATE TRANSFER (OTP)
   else if(action === "initiateTransfer"){
    response = await initiateTransfer(body)
   }
 
+  // 🔐 CONFIRM TRANSFER (OTP)
   else if(action === "confirmTransfer"){
    response = await confirmTransfer(body)
   }
 
-  // TRANSACTIONS
+  // 📜 TRANSACTION HISTORY
   else if(action === "transactions"){
    response = await getTransactionHistory(body.phone)
   }
 
+  // ❌ UNKNOWN ACTION
   else{
    return res.status(404).json({
     success:false,
@@ -158,5 +179,4 @@ export default async function handler(
   })
 
  }
-
 }
