@@ -2,18 +2,19 @@ import { pool } from "../db"
 import { v4 as uuid } from "uuid"
 
 export async function createLedgerEntry(
- accountId:string,
- debit:number,
- credit:number,
- transactionId:string
+ client: any,
+ accountId: string,
+ debit: number,
+ credit: number,
+ transactionId: string
 ){
 
- await pool.query(
+ await client.query(
  `
- INSERT INTO ledger_entries(id,account_id,debit,credit,transaction_id)
- VALUES($1,$2,$3,$4,$5)
+ INSERT INTO ledger_entries(account_id,debit,credit,transaction_id)
+ VALUES($1,$2,$3,$4)
  `,
- [uuid(),accountId,debit,credit,transactionId]
+ [accountId, debit, credit, transactionId]
  )
 
 }

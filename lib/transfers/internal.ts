@@ -15,28 +15,17 @@ export async function internalTransfer(
  idempotencyKey: string
 ){
 
- // 🛑 BASIC VALIDATION
  if(!fromAccountNumber || !toAccountNumber){
   throw new Error("Account numbers required")
  }
 
  if(amount <= 0){
-  throw new Error("Invalid transfer amount")
+  throw new Error("Invalid amount")
  }
 
- if(!phone || !pin){
-  throw new Error("Phone and PIN required")
- }
-
- if(!idempotencyKey){
-  throw new Error("Idempotency key required")
- }
-
- // ✅ IDEMPOTENCY CHECK
+ // ✅ IDEMPOTENCY
  const existing = await checkIdempotency(idempotencyKey)
- if(existing){
-  return existing
- }
+ if(existing) return existing
 
  const client = await pool.connect()
 
@@ -44,7 +33,7 @@ export async function internalTransfer(
 
   await client.query("BEGIN")
 
-  // 🔍 FETCH ACCOUNTS
+  // 🔍 ACCOUNTS
   const from = await client.query(
    `SELECT id, balance FROM accounts WHERE account_number=$1`,
    [fromAccountNumber]
@@ -55,60 +44,33 @@ export async function internalTransfer(
    [toAccountNumber]
   )
 
-  if(!from.rows.length){
-   throw new Error("Source account not found")
-  }
-
-  if(!to.rows.length){
-   throw new Error("Destination account not found")
-  }
+  if(!from.rows.length) throw new Error("Source account not found")
+  if(!to.rows.length) throw new Error("Destination account not found")
 
   if(from.rows[0].balance < amount){
    throw new Error("Insufficient funds")
   }
 
-  // 🔐 PIN VALIDATION (UPDATED STRUCTURE)
+  // 🔐 PIN
   const pinResult = await validatePin(phone, pin)
-
   if(!pinResult.valid){
    throw new Error("Invalid PIN")
   }
 
-  const userId = pinResult.userId
-
-  // 🚨 FRAUD CHECK (TRANSACTION SAFE)
+  // 🚨 FRAUD
   const fraudResult = await runFraudChecks(
    client,
    from.rows[0].id,
    amount
   )
 
-  const fraudScore = fraudResult.riskScore
-
-  // ⚠️ OPTIONAL: FRAUD ESCALATION (BANK-LEVEL)
-  if(fraudScore >= 90){
-   throw new Error("Transaction blocked: high fraud risk")
+  if(fraudResult.riskScore >= 90){
+   throw new Error("Transaction blocked: fraud risk")
   }
 
   const txId = uuid()
 
-  // 💸 DEBIT
-  await client.query(
-   `UPDATE accounts SET balance = balance - $1 WHERE id=$2`,
-   [amount, from.rows[0].id]
-  )
-
-  // 💰 CREDIT
-  await client.query(
-   `UPDATE accounts SET balance = balance + $1 WHERE id=$2`,
-   [amount, to.rows[0].id]
-  )
-
-  // 📒 LEDGER ENTRIES (DOUBLE ENTRY)
-  await createLedgerEntry(from.rows[0].id, amount, 0, txId)
-  await createLedgerEntry(to.rows[0].id, 0, amount, txId)
-
-  // 🧾 TRANSACTION RECORD
+  // ✅ STEP 1: CREATE TRANSACTION FIRST (FIXED)
   await client.query(
    `
    INSERT INTO transactions(id, amount, status, type, reference)
@@ -117,19 +79,30 @@ export async function internalTransfer(
    [txId, amount, "completed", "transfer", `TX-${Date.now()}`]
   )
 
+  // ✅ STEP 2: UPDATE BALANCES
+  await client.query(
+   `UPDATE accounts SET balance = balance - $1 WHERE id=$2`,
+   [amount, from.rows[0].id]
+  )
+
+  await client.query(
+   `UPDATE accounts SET balance = balance + $1 WHERE id=$2`,
+   [amount, to.rows[0].id]
+  )
+
+  // ✅ STEP 3: LEDGER (WITH CLIENT)
+  await createLedgerEntry(client, from.rows[0].id, amount, 0, txId)
+  await createLedgerEntry(client, to.rows[0].id, 0, amount, txId)
+
   await client.query("COMMIT")
 
   const response = {
    success: true,
    transactionId: txId,
    amount,
-   fraud: {
-    score: fraudScore,
-    passed: fraudResult.passed
-   }
+   fraudScore: fraudResult.riskScore
   }
 
-  // ✅ SAVE IDEMPOTENCY RESULT
   await saveIdempotency(idempotencyKey, response)
 
   return response
@@ -138,16 +111,13 @@ export async function internalTransfer(
 
   await client.query("ROLLBACK")
 
-  // 🔥 CLEAN ERROR RESPONSE
   return {
    success: false,
-   error: err.message || "Transfer failed"
+   error: err.message
   }
 
  }finally{
-
   client.release()
-
  }
 
 }
