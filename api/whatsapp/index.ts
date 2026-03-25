@@ -18,6 +18,9 @@ import { logRequest, logResponse } from "../../lib/logger"
 
 import { changePin } from "../../lib/auth/changePin"
 
+import { purchaseAirtime } from "../../lib/services/airtime"
+import { purchaseData } from "../../lib/services/data"
+
 import { pool } from "../../lib/db"
 
 export default async function handler(
@@ -155,6 +158,87 @@ export default async function handler(
   body.newPin
  )
 
+}
+
+//AIRTIME PURCHASE
+
+else if(action === "airtime"){
+
+ const { phone, amount, network, fromAccount } = body
+
+ const acc = await pool.query(
+ `SELECT id, balance FROM accounts WHERE account_number=$1`,
+ [fromAccount]
+ )
+
+ if(!acc.rows.length){
+  throw new Error("Account not found")
+ }
+
+ if(acc.rows[0].balance < amount){
+  throw new Error("Insufficient funds")
+ }
+
+ const client = await pool.connect()
+ await client.query("BEGIN")
+
+ const result = await purchaseAirtime(
+  client,
+  acc.rows[0].id,
+  Number(amount),
+  phone,
+  network
+ )
+
+ await client.query("COMMIT")
+ client.release()
+
+ response = result
+}
+
+//DATA PURCHASE
+
+else if(action === "data"){
+
+ const {
+  phone,
+  amount,
+  network,
+  fromAccount,
+  plan,
+  duration
+ } = body
+
+ const acc = await pool.query(
+ `SELECT id, balance FROM accounts WHERE account_number=$1`,
+ [fromAccount]
+ )
+
+ if(!acc.rows.length){
+  throw new Error("Account not found")
+ }
+
+ if(acc.rows[0].balance < amount){
+  throw new Error("Insufficient funds")
+ }
+
+ const client = await pool.connect()
+ await client.query("BEGIN")
+
+ const result = await purchaseData(
+  client,
+  acc.rows[0].id,
+  Number(amount),
+  phone,
+  network,
+  plan,
+  duration
+ )
+
+ await client.query("COMMIT")
+ client.release()
+
+ response = result
 }
 
 //RESET PIN
