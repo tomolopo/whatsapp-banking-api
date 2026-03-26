@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bank IB - Register</title>
+</head>
+
+<body style="font-family: Arial; max-width:400px; margin:auto; padding:20px;">
+
+  <h2>Create Your Account</h2>
+
+  <form id="form">
+
+    <input id="phone" hidden />
+
+    <input placeholder="First Name" id="firstName" required /><br><br>
+    <input placeholder="Last Name" id="lastName" required /><br><br>
+    <input placeholder="Address" id="address" required /><br><br>
+    <input type="password" placeholder="PIN" id="pin" required /><br><br>
+
+    <button type="submit">Register</button>
+
+  </form>
+
+  <p id="msg"></p>
+
+  <script>
+
+    // ✅ injected securely from backend
+    const phone = "{{PHONE}}"
+    document.getElementById("phone").value = phone
+
+    const form = document.getElementById("form")
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault()
+
+      const body = {
+        phone,
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        address: document.getElementById("address").value,
+        pin: document.getElementById("pin").value
+      }
+
+      const res = await fetch("/api/whatsapp?action=register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      })
+
+      const data = await res.json()
+
+      if(data.success){
+
+        document.getElementById("msg").innerText = "✅ Registration successful"
+
+        // 🚀 AUTO CREATE ACCOUNT
+        await fetch("/api/whatsapp?action=createAccount", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ phone })
+        })
+
+        // 🔄 REDIRECT TO WHATSAPP
+        setTimeout(() => {
+          window.location.href = "https://wa.me/2347073334607"
+        }, 2000)
+
+      }else{
+        document.getElementById("msg").innerText = "❌ " + data.error
+      }
+
+    })
+
+  </script>
+
+</body>
+</html>
