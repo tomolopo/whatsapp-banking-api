@@ -66,7 +66,7 @@
 
         // 🔥 SEND WEBHOOK TO INFOBIP
         try{
-          await fetch("https://your-infobip-webhook-url.com/onboarding", {
+          await fetch('https://api2.infobip.com/bots/webhook/${sessionId}', {
             method:"POST",
             headers:{
               "Content-Type":"application/json"
@@ -86,9 +86,8 @@
         // 🔄 REDIRECT BACK TO WHATSAPP WITH MESSAGE
         setTimeout(() => {
           window.location.href =
-            `https://wa.me/2347073334607?text=${encodeURIComponent(
-              `✅ Please note that the registration is successful!\nAccount Number: ${result.accountNumber}`
-            )}`
+            `https://wa.me/2347073334607`
+            
         }, 2000)
 
       }catch(err){
