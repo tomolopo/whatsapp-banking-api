@@ -23,6 +23,8 @@ import { purchaseData } from "../../lib/services/data"
 
 import { pool } from "../../lib/db"
 
+import { getAccounts } from "../../lib/accounts/getAccount"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -148,6 +150,12 @@ export default async function handler(
   else if(action === "transactions"){
    response = await getTransactionHistory(body.phone)
   }
+
+
+// GET ACCOUNTS
+  else if(action === "getAccounts"){
+  response = await getAccounts(body.phone)
+}
 
   // CHANGE PIN
   else if(action === "changePin"){
