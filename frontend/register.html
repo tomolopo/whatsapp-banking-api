@@ -10,8 +10,6 @@
 
   <form id="form">
 
-    <input id="phone" hidden />
-
     <input placeholder="First Name" id="firstName" required /><br><br>
     <input placeholder="Last Name" id="lastName" required /><br><br>
     <input placeholder="Address" id="address" required /><br><br>
@@ -25,53 +23,76 @@
 
   <script>
 
-    // ✅ injected securely from backend
-    const phone = "{{PHONE}}"
-    document.getElementById("phone").value = phone
+    // 🔐 SECURE TOKEN INJECTED FROM BACKEND
+    const token = "{{TOKEN}}"
 
     const form = document.getElementById("form")
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault()
 
-      const body = {
-        phone,
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        address: document.getElementById("address").value,
-        pin: document.getElementById("pin").value
-      }
+      const msg = document.getElementById("msg")
+      msg.innerText = "Processing..."
 
-      const res = await fetch("/api/whatsapp?action=register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      })
+      try{
 
-      const data = await res.json()
+        const body = {
+          token,
+          firstName: document.getElementById("firstName").value,
+          lastName: document.getElementById("lastName").value,
+          address: document.getElementById("address").value,
+          pin: document.getElementById("pin").value
+        }
 
-      if(data.success){
-
-        document.getElementById("msg").innerText = "✅ Registration successful"
-
-        // 🚀 AUTO CREATE ACCOUNT
-        await fetch("/api/whatsapp?action=createAccount", {
+        // 🔥 REGISTER (AND CREATE ACCOUNT INSIDE BACKEND)
+        const res = await fetch("/api/whatsapp?action=register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ phone })
+          body: JSON.stringify(body)
         })
 
-        // 🔄 REDIRECT TO WHATSAPP
+        const data = await res.json()
+
+        if(!data.success){
+          msg.innerText = "❌ " + (data.error || "Registration failed")
+          return
+        }
+
+        const result = data.data
+
+        msg.innerText = "✅ Registration successful"
+
+        // 🔥 SEND WEBHOOK TO INFOBIP
+        try{
+          await fetch("https://your-infobip-webhook-url.com/onboarding", {
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+              event:"USER_REGISTERED",
+              phone: result.phone,
+              firstName: result.firstName,
+              lastName: result.lastName,
+              accountNumber: result.accountNumber
+            })
+          })
+        }catch(e){
+          console.log("Webhook failed (non-blocking)")
+        }
+
+        // 🔄 REDIRECT BACK TO WHATSAPP WITH MESSAGE
         setTimeout(() => {
-          window.location.href = "https://wa.me/2347073334607"
+          window.location.href =
+            `https://wa.me/${result.phone}?text=${encodeURIComponent(
+              `✅ Registration successful!\nAccount Number: ${result.accountNumber}`
+            )}`
         }, 2000)
 
-      }else{
-        document.getElementById("msg").innerText = "❌ " + data.error
+      }catch(err){
+        msg.innerText = "❌ Something went wrong"
       }
 
     })

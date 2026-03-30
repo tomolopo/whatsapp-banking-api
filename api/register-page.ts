@@ -14,13 +14,14 @@ export default function handler(
   return res.status(400).send("Invalid link")
  }
 
+ // 🔐 VERIFY TOKEN
  const phone = verifyToken(token as string)
 
  if(!phone){
   return res.status(400).send("Invalid or expired token")
  }
 
- // load HTML
+ // 📄 LOAD HTML FILE
  const filePath = path.join(
   process.cwd(),
   "frontend",
@@ -29,8 +30,14 @@ export default function handler(
 
  let html = fs.readFileSync(filePath, "utf8")
 
- // inject phone securely into page
- html = html.replace("{{PHONE}}", phone)
+ // 🔥 INJECT TOKEN (NOT PHONE → more secure)
+ html = html.replace("{{TOKEN}}", token as string)
+
+ // 🔥 OPTIONAL: inject API base URL (for flexibility)
+ html = html.replace(
+  "{{API_BASE_URL}}",
+  "https://whatsapp-banking-api.vercel.app"
+ )
 
  res.setHeader("Content-Type", "text/html")
  res.status(200).send(html)

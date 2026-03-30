@@ -82,7 +82,7 @@ export default async function handler(
   // 📝 REGISTER USER
   else if(action === "register"){
    response = await registerUser(
-    body.phone,
+    body.token,
     body.firstName,
     body.lastName,
     body.address,
