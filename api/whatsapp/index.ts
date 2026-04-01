@@ -99,7 +99,7 @@ export default async function handler(
 
   // 💰 BALANCE
   else if(action === "balance"){
-   response = await getBalance(body.phone)
+   response = await getBalance(body.phone, body.accountNumber)
   }
 
   // 🔍 RESOLVE ACCOUNT (NEW)
