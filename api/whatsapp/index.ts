@@ -25,6 +25,9 @@ import { pool } from "../../lib/db"
 
 import { getAccounts } from "../../lib/accounts/getAccount"
 
+import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
+import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -151,6 +154,24 @@ export default async function handler(
    response = await getTransactionHistory(body.phone)
   }
 
+
+  // ADD BENEFICIARY
+
+  else if(action === "addBeneficiary"){
+  response = await addBeneficiary(
+    body.phone,
+    body.accountNumber,
+    body.bankCode,
+    body.name,
+    body.nickname
+  )
+}
+
+
+// GET BENEFICIARIES
+else if(action === "getBeneficiaries"){
+  response = await getBeneficiaries(body.phone)
+}
 
 // GET ACCOUNTS
   else if(action === "getAccounts"){
