@@ -27,6 +27,7 @@ import { getAccounts } from "../../lib/accounts/getAccount"
 
 import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
 import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
+import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary"
 
 export default async function handler(
  req: VercelRequest,
@@ -167,6 +168,14 @@ export default async function handler(
   )
 }
 
+// FAVORITE BENEFICIARY
+
+else if(action === "favoriteBeneficiary"){
+  response = await favoriteBeneficiary(
+    body.phone,
+    body.accountNumber
+  )
+}
 
 // GET BENEFICIARIES
 else if(action === "getBeneficiaries"){

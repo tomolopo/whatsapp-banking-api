@@ -29,8 +29,9 @@ export async function getBeneficiaries(phone: string){
     accountNumber: b.account_number,
     bankCode: b.bank_code,
     nickname: b.nickname,
+    isFavorite: b.is_favorite, // ✅ NEW
     label: `${b.nickname || b.name} (${b.account_number})`
   }))
- }
+}
 
 }
