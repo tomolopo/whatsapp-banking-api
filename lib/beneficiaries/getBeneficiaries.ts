@@ -14,14 +14,20 @@ export async function getBeneficiaries(phone: string){
  const userId = userRes.rows[0].id
 
  const result = await pool.query(
-  `
-  SELECT name, account_number, bank_code, nickname
-  FROM beneficiaries
-  WHERE user_id=$1
-  ORDER BY created_at DESC
-  `,
-  [userId]
- )
+ `
+ SELECT 
+   name,
+   account_number,
+   bank_code,
+   nickname,
+   is_favorite,
+   created_at
+ FROM beneficiaries
+ WHERE user_id=$1
+ ORDER BY is_favorite DESC, created_at DESC
+ `,
+ [userId]
+)
 
  return {
   beneficiaries: result.rows.map(b => ({
