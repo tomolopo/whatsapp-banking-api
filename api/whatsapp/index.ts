@@ -87,7 +87,7 @@ export default async function handler(
    response = await checkUser(body.phone as string)
   }
 
-  // 📝 REGISTER USER
+// 📝 REGISTER USER
 else if(action === "register"){
 
   const result = await registerUser(
@@ -100,12 +100,12 @@ else if(action === "register"){
 
   response = result
 
-  // 🔥 SEND EVENT TO INFOBIP (NON-BLOCKING)
+  const phone = result.data.phone
+
+  // 🔥 TRY SESSION-BASED EVENT FIRST
   try{
 
-    const sessionId = await getSessionIdByPhone(
-      result.data.phone
-    )
+    const sessionId = await getSessionIdByPhone(phone)
 
     if(sessionId){
 
@@ -129,11 +129,31 @@ else if(action === "register"){
       console.log("✅ Infobip webhook sent:", sessionId)
 
     }else{
-      console.log("⚠️ No sessionId found for user")
+
+      console.log("⚠️ No sessionId → using fallback WhatsApp message")
+
+      // 🔥 FALLBACK: SEND DIRECT WHATSAPP MESSAGE
+      await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
+        method: "POST",
+        headers: {
+          "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from: process.env.INFOBIP_SENDER,
+          to: phone,
+          content: {
+            text: `🎉 Welcome ${result.data.firstName}!\n\nYour Bank-IB account has been created successfully.\n\n💳 Account Number: ${result.data.accountNumber}\n💰 Balance: ₦${result.data.balance}\n\nReply "Hi" to continue.`
+          }
+        })
+      })
+
+      console.log("✅ Fallback WhatsApp message sent")
+
     }
 
   }catch(e){
-    console.error("❌ Infobip webhook failed:", e)
+    console.error("❌ Infobip integration failed:", e)
   }
 
 }
