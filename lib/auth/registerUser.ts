@@ -4,6 +4,24 @@ import bcrypt from "bcryptjs"
 import { verifyToken } from "../onboarding/token"
 
 /*
+ CONFIG
+*/
+const DEFAULT_BALANCE = Number(
+ process.env.DEFAULT_ACCOUNT_BALANCE || 1000000
+)
+
+const BANK_CODE = "999" // Bank-IB
+
+/*
+ GENERATE UNIQUE ACCOUNT NUMBER
+*/
+function generateAccountNumber(){
+ return Math.floor(
+  1000000000 + Math.random() * 9000000000
+ ).toString()
+}
+
+/*
  REGISTER USER + CREATE ACCOUNT (ATOMIC)
 */
 export async function registerUser(
@@ -77,13 +95,26 @@ export async function registerUser(
    ]
   )
 
-  // 🏦 CREATE ACCOUNT (AUTO)
-  const accountNumber = Math.floor(
-   1000000000 + Math.random() * 9000000000
-  ).toString()
+  // 🔁 GENERATE UNIQUE ACCOUNT NUMBER
+  let accountNumber = generateAccountNumber()
+
+  let existsAccount = await client.query(
+   `SELECT id FROM accounts WHERE account_number=$1`,
+   [accountNumber]
+  )
+
+  while(existsAccount.rows.length){
+   accountNumber = generateAccountNumber()
+
+   existsAccount = await client.query(
+    `SELECT id FROM accounts WHERE account_number=$1`,
+    [accountNumber]
+   )
+  }
 
   const accountId = uuid()
 
+  // 🏦 CREATE ACCOUNT
   await client.query(
    `
    INSERT INTO accounts(
@@ -100,9 +131,9 @@ export async function registerUser(
     accountId,
     userId,
     accountNumber,
-    0,
+    DEFAULT_BALANCE,
     "savings",
-    "999" // Bank-IB
+    BANK_CODE
    ]
   )
 
@@ -110,10 +141,15 @@ export async function registerUser(
 
   return {
    success: true,
-   phone,
-   firstName,
-   lastName,
-   accountNumber
+   data: {
+    phone,
+    firstName,
+    lastName,
+    accountNumber,
+    accountType: "savings",
+    bankCode: BANK_CODE,
+    balance: DEFAULT_BALANCE
+   }
   }
 
  }catch(err:any){

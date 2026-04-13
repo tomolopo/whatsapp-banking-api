@@ -2,13 +2,17 @@ import { pool } from "../db"
 import { v4 as uuid } from "uuid"
 
 /*
- BANK-IB CODE (DEMO BANK)
+ CONFIG
 */
-const BANK_CODE = "999"
+const BANK_CODE = "999" // Bank-IB
+const BANK_NAME = "Bank-IB"
+
+const DEFAULT_BALANCE = Number(
+ process.env.DEFAULT_ACCOUNT_BALANCE || 1000000
+)
 
 /*
  GENERATE ACCOUNT NUMBER (10 digits)
- Later can upgrade to real NUBAN
 */
 function generateAccountNumber(){
  return Math.floor(
@@ -17,7 +21,7 @@ function generateAccountNumber(){
 }
 
 /*
- CREATE ACCOUNT (MULTI-ACCOUNT SUPPORTED)
+ CREATE ACCOUNT (PRODUCTION READY)
 */
 export async function createAccount(
  phone: string,
@@ -46,7 +50,7 @@ export async function createAccount(
 
   const userId = userRes.rows[0].id
 
-  // 🔢 CHECK ACCOUNT LIMIT (MAX 5)
+  // 🔢 ACCOUNT LIMIT (MAX 5)
   const countRes = await client.query(
    `SELECT COUNT(*) FROM accounts WHERE user_id=$1`,
    [userId]
@@ -94,9 +98,9 @@ export async function createAccount(
     accountId,
     userId,
     accountNumber,
-    0,
+    DEFAULT_BALANCE,
     type,
-    BANK_CODE // 👈 Bank-IB
+    BANK_CODE
    ]
   )
 
@@ -104,13 +108,13 @@ export async function createAccount(
 
   return {
    success: true,
-   account: {
+   data: {
     accountId,
     accountNumber,
     accountType: type,
     bankCode: BANK_CODE,
-    bankName: "Bank-IB",
-    balance: 0
+    bankName: BANK_NAME,
+    balance: DEFAULT_BALANCE
    }
   }
 
