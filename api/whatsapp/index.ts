@@ -29,6 +29,8 @@ import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
 import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
 import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary"
 
+import { getSessionIdByPhone } from "../../lib/session/getSession"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -86,15 +88,55 @@ export default async function handler(
   }
 
   // 📝 REGISTER USER
-  else if(action === "register"){
-   response = await registerUser(
+else if(action === "register"){
+
+  const result = await registerUser(
     body.token,
     body.firstName,
     body.lastName,
     body.address,
     body.pin
-   )
+  )
+
+  response = result
+
+  // 🔥 SEND EVENT TO INFOBIP (NON-BLOCKING)
+  try{
+
+    const sessionId = await getSessionIdByPhone(
+      result.data.phone
+    )
+
+    if(sessionId){
+
+      await fetch(`https://api2.infobip.com/bots/webhook/${sessionId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          type: "event",
+          name: "USER_REGISTERED",
+          data: {
+            firstName: result.data.firstName,
+            accountNumber: result.data.accountNumber,
+            balance: result.data.balance
+          }
+        })
+      })
+
+      console.log("✅ Infobip webhook sent:", sessionId)
+
+    }else{
+      console.log("⚠️ No sessionId found for user")
+    }
+
+  }catch(e){
+    console.error("❌ Infobip webhook failed:", e)
   }
+
+}
 
   // 🏦 CREATE ACCOUNT
   else if(action === "createAccount"){
