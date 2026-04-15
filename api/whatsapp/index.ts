@@ -79,7 +79,7 @@ export default async function handler(
    response = await checkUser(body.phone as string)
   }
 
-  // REGISTER USER (UPDATED WITH DEBUG)
+  // REGISTER USER
   else if(action === "register"){
 
    console.log("🚀 REGISTER ACTION TRIGGERED")
@@ -136,28 +136,48 @@ Or type "Hi" to continue.`
     console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
     console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
 
-    const payload = {
-      from: process.env.INFOBIP_SENDER,
-      to: phone,
-      content: {
-        text: message
+    console.log("📱 PHONE:", phone)
+    console.log("📝 MESSAGE:", message)
+
+    let payload
+    try {
+      payload = {
+        from: process.env.INFOBIP_SENDER,
+        to: phone,
+        content: {
+          text: message
+        }
       }
+      console.log("✅ Payload built")
+    } catch(e){
+      console.error("❌ Payload error:", e)
     }
 
-    const headers = {
-      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-      "Content-Type": "application/json"
+    let headers
+    try {
+      headers = {
+        "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+        "Content-Type": "application/json"
+      }
+      console.log("✅ Headers built")
+    } catch(e){
+      console.error("❌ Header error:", e)
     }
 
-    const url = `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`
+    let url
+    try {
+      url = `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`
+      console.log("📤 FULL REQUEST URL:", url)
+    } catch(e){
+      console.error("❌ URL error:", e)
+    }
 
-    console.log("📤 FULL REQUEST URL:", url)
     console.log("📤 HEADERS:", headers)
     console.log("📤 PAYLOAD:", payload)
 
-    const infobipRes = await fetch(url, {
+    const infobipRes = await fetch(url as string, {
       method: "POST",
-      headers,
+      headers: headers as any,
       body: JSON.stringify(payload)
     })
 
