@@ -136,6 +136,12 @@ Or type "Hi" to continue.`
     console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
     console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
 
+    // 🔍 DEEP DEBUG FOR API KEY
+    console.log("🔑 API KEY LENGTH:", process.env.INFOBIP_API_KEY?.length)
+    console.log("🔑 API KEY RAW:", JSON.stringify(process.env.INFOBIP_API_KEY))
+
+    console.log("🔐 FINAL AUTH HEADER:", `App ${process.env.INFOBIP_API_KEY}`)
+
     console.log("📱 PHONE:", phone)
     console.log("📝 MESSAGE:", message)
 
