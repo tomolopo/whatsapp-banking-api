@@ -118,6 +118,11 @@ export default async function handler(
 
     console.log("📤 About to send WhatsApp message")
 
+    // 🔑 DEBUG ENV
+    console.log("🔑 RAW API KEY:", process.env.INFOBIP_API_KEY)
+    console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
+    console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
+
     const formattedBalance = Number(balance).toLocaleString()
 
     const message = `🎉 Welcome ${firstName}!
