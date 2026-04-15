@@ -29,8 +29,6 @@ import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
 import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
 import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary"
 
-import { getSessionIdByPhone } from "../../lib/session/getSession"
-
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -70,7 +68,6 @@ export default async function handler(
    })
   }
 
-  // ✅ HANDLE GET + POST
   const body = req.method === "GET"
    ? req.query
    : req.body || {}
@@ -87,76 +84,61 @@ export default async function handler(
    response = await checkUser(body.phone as string)
   }
 
-// 📝 REGISTER USER
-else if(action === "register"){
+  // 📝 REGISTER USER (UPDATED - WHATSAPP MESSAGE)
+  else if(action === "register"){
 
-  const result = await registerUser(
+   const result = await registerUser(
     body.token,
     body.firstName,
     body.lastName,
     body.address,
     body.pin
-  )
+   )
 
-  response = result
+   response = result
 
-  const phone = result.data.phone
+   const phone = result.data.phone
 
-  // 🔥 TRY SESSION-BASED EVENT FIRST
-  try{
+   try{
 
-    const sessionId = await getSessionIdByPhone(phone)
+    const formattedBalance = Number(
+     result.data.balance
+    ).toLocaleString()
 
-    if(sessionId){
+    const message = `🎉 Welcome ${result.data.firstName}!
 
-      await fetch(`https://api2.infobip.com/bots/webhook/${sessionId}`, {
-        method: "POST",
-        headers: {
-          "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: "event",
-          name: "USER_REGISTERED",
-          data: {
-            firstName: result.data.firstName,
-            accountNumber: result.data.accountNumber,
-            balance: result.data.balance
-          }
-        })
-      })
+Your Bank-IB account has been created successfully.
 
-      console.log("✅ Infobip webhook sent:", sessionId)
+💳 Account Number: ${result.data.accountNumber}
+💰 Balance: ₦${formattedBalance}
 
-    }else{
+Reply with:
+1. Check Balance
+2. Transfer Money
+3. Buy Airtime
 
-      console.log("⚠️ No sessionId → using fallback WhatsApp message")
+Or type "Hi" to continue.`
 
-      // 🔥 FALLBACK: SEND DIRECT WHATSAPP MESSAGE
-      await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
-        method: "POST",
-        headers: {
-          "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from: process.env.INFOBIP_SENDER,
-          to: phone,
-          content: {
-            text: `🎉 Welcome ${result.data.firstName}!\n\nYour Bank-IB account has been created successfully.\n\n💳 Account Number: ${result.data.accountNumber}\n💰 Balance: ₦${result.data.balance}\n\nReply "Hi" to continue.`
-          }
-        })
-      })
+    await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
+     method: "POST",
+     headers: {
+      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+      "Content-Type": "application/json"
+     },
+     body: JSON.stringify({
+      from: process.env.INFOBIP_SENDER,
+      to: phone,
+      content: { text: message }
+     })
+    })
 
-      console.log("✅ Fallback WhatsApp message sent")
+    console.log("✅ WhatsApp onboarding message sent")
 
-    }
+   }catch(e){
+    console.error("❌ WhatsApp message failed:", e)
+   }
 
-  }catch(e){
-    console.error("❌ Infobip integration failed:", e)
   }
-
-}
 
   // 🏦 CREATE ACCOUNT
   else if(action === "createAccount"){
@@ -168,14 +150,14 @@ else if(action === "register"){
    response = await getBalance(body.phone, body.accountNumber)
   }
 
-  // 🔍 RESOLVE ACCOUNT (NEW)
+  // 🔍 RESOLVE ACCOUNT
   else if(action === "resolveAccount"){
    response = await resolveAccount(
     body.accountNumber as string
    )
   }
 
-  // 🧠 CONFIRM TRANSFER DETAILS (NEW)
+  // 🧠 CONFIRM TRANSFER DETAILS
   else if(action === "confirmTransferDetails"){
    response = await confirmTransferDetails(
     body.accountNumber as string,
@@ -217,163 +199,154 @@ else if(action === "register"){
    response = await getTransactionHistory(body.phone)
   }
 
-
-  // ADD BENEFICIARY
-
+  // ➕ ADD BENEFICIARY
   else if(action === "addBeneficiary"){
-  response = await addBeneficiary(
+   response = await addBeneficiary(
     body.phone,
     body.accountNumber,
     body.bankCode,
     body.name,
     body.nickname
-  )
-}
+   )
+  }
 
-// FAVORITE BENEFICIARY
-
-else if(action === "favoriteBeneficiary"){
-  response = await favoriteBeneficiary(
+  // ⭐ FAVORITE BENEFICIARY
+  else if(action === "favoriteBeneficiary"){
+   response = await favoriteBeneficiary(
     body.phone,
     body.accountNumber
-  )
-}
+   )
+  }
 
-// GET BENEFICIARIES
-else if(action === "getBeneficiaries"){
-  response = await getBeneficiaries(body.phone)
-}
+  // 📋 GET BENEFICIARIES
+  else if(action === "getBeneficiaries"){
+   response = await getBeneficiaries(body.phone)
+  }
 
-// GET ACCOUNTS
+  // 🏦 GET ACCOUNTS
   else if(action === "getAccounts"){
-  response = await getAccounts(body.phone)
-}
+   response = await getAccounts(body.phone)
+  }
 
-  // CHANGE PIN
+  // 🔐 CHANGE PIN
   else if(action === "changePin"){
+   response = await changePin(
+    body.phone,
+    body.oldPin,
+    body.newPin
+   )
+  }
 
- response = await changePin(
-  body.phone,
-  body.oldPin,
-  body.newPin
- )
+  // 📱 AIRTIME
+  else if(action === "airtime"){
 
-}
+   const { phone, amount, network, fromAccount } = body
 
-//AIRTIME PURCHASE
+   const acc = await pool.query(
+    `SELECT id, balance FROM accounts WHERE account_number=$1`,
+    [fromAccount]
+   )
 
-else if(action === "airtime"){
+   if(!acc.rows.length){
+    throw new Error("Account not found")
+   }
 
- const { phone, amount, network, fromAccount } = body
+   if(acc.rows[0].balance < amount){
+    throw new Error("Insufficient funds")
+   }
 
- const acc = await pool.query(
- `SELECT id, balance FROM accounts WHERE account_number=$1`,
- [fromAccount]
- )
+   const client = await pool.connect()
+   await client.query("BEGIN")
 
- if(!acc.rows.length){
-  throw new Error("Account not found")
- }
+   const result = await purchaseAirtime(
+    client,
+    acc.rows[0].id,
+    Number(amount),
+    phone,
+    network
+   )
 
- if(acc.rows[0].balance < amount){
-  throw new Error("Insufficient funds")
- }
+   await client.query("COMMIT")
+   client.release()
 
- const client = await pool.connect()
- await client.query("BEGIN")
+   response = result
+  }
 
- const result = await purchaseAirtime(
-  client,
-  acc.rows[0].id,
-  Number(amount),
-  phone,
-  network
- )
+  // 📶 DATA
+  else if(action === "data"){
 
- await client.query("COMMIT")
- client.release()
+   const {
+    phone,
+    amount,
+    network,
+    fromAccount,
+    plan,
+    duration
+   } = body
 
- response = result
-}
+   const acc = await pool.query(
+    `SELECT id, balance FROM accounts WHERE account_number=$1`,
+    [fromAccount]
+   )
 
-//DATA PURCHASE
+   if(!acc.rows.length){
+    throw new Error("Account not found")
+   }
 
-else if(action === "data"){
+   if(acc.rows[0].balance < amount){
+    throw new Error("Insufficient funds")
+   }
 
- const {
-  phone,
-  amount,
-  network,
-  fromAccount,
-  plan,
-  duration
- } = body
+   const client = await pool.connect()
+   await client.query("BEGIN")
 
- const acc = await pool.query(
- `SELECT id, balance FROM accounts WHERE account_number=$1`,
- [fromAccount]
- )
+   const result = await purchaseData(
+    client,
+    acc.rows[0].id,
+    Number(amount),
+    phone,
+    network,
+    plan,
+    duration
+   )
 
- if(!acc.rows.length){
-  throw new Error("Account not found")
- }
+   await client.query("COMMIT")
+   client.release()
 
- if(acc.rows[0].balance < amount){
-  throw new Error("Insufficient funds")
- }
+   response = result
+  }
 
- const client = await pool.connect()
- await client.query("BEGIN")
+  // 🔄 RESET PIN
+  else if(action === "resetPin"){
 
- const result = await purchaseData(
-  client,
-  acc.rows[0].id,
-  Number(amount),
-  phone,
-  network,
-  plan,
-  duration
- )
+   const bcrypt = require("bcryptjs")
 
- await client.query("COMMIT")
- client.release()
+   const { phone, newPin } = body
 
- response = result
-}
+   if(!phone || !newPin){
+    throw new Error("phone and newPin required")
+   }
 
-//RESET PIN
+   const hash = await bcrypt.hash(newPin, 10)
 
-else if(action === "resetPin"){
+   await pool.query(
+    `
+    UPDATE users
+    SET pin_hash=$1,
+        pin_attempts=0,
+        pin_locked_until=NULL
+    WHERE phone=$2
+    `,
+    [hash, phone]
+   )
 
- const bcrypt = require("bcryptjs")
+   response = {
+    success: true,
+    message: "PIN reset successfully"
+   }
+  }
 
- const { phone, newPin } = body
-
- if(!phone || !newPin){
-  throw new Error("phone and newPin required")
- }
-
- const hash = await bcrypt.hash(newPin, 10)
-
- await pool.query(
- `
- UPDATE users
- SET pin_hash=$1,
-     pin_attempts=0,
-     pin_locked_until=NULL
- WHERE phone=$2
- `,
- [hash, phone]
- )
-
- response = {
-  success: true,
-  message: "PIN reset successfully"
- }
-
-}
-
-  // ❌ UNKNOWN ACTION
+  // ❌ UNKNOWN
   else{
    return res.status(404).json({
     success:false,
