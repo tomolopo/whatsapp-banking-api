@@ -34,7 +34,6 @@ export default async function handler(
  res: VercelResponse
 ){
 
- // 🌍 CORS
  res.setHeader("Access-Control-Allow-Origin","*")
  res.setHeader("Access-Control-Allow-Methods","POST,GET,OPTIONS")
  res.setHeader("Access-Control-Allow-Headers","Content-Type, idempotency-key")
@@ -43,7 +42,6 @@ export default async function handler(
   return res.status(200).end()
  }
 
- // 🔗 CORRELATION ID
  const requestId = (req.headers["x-request-id"] as string) || uuid()
 
  try{
@@ -67,9 +65,7 @@ export default async function handler(
    })
   }
 
-  const body = req.method === "GET"
-   ? req.query
-   : req.body || {}
+  const body = req.method === "GET" ? req.query : req.body || {}
 
   let response:any
 
@@ -83,7 +79,7 @@ export default async function handler(
    response = await checkUser(body.phone as string)
   }
 
-  // REGISTER USER (UPDATED)
+  // REGISTER USER (UPDATED WITH DEBUG)
   else if(action === "register"){
 
    console.log("🚀 REGISTER ACTION TRIGGERED")
@@ -116,13 +112,6 @@ export default async function handler(
 
    try{
 
-    console.log("📤 About to send WhatsApp message")
-
-    // 🔑 DEBUG ENV
-    console.log("🔑 RAW API KEY:", process.env.INFOBIP_API_KEY)
-    console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
-    console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
-
     const formattedBalance = Number(balance).toLocaleString()
 
     const message = `🎉 Welcome ${firstName}!
@@ -139,26 +128,45 @@ Reply with:
 
 Or type "Hi" to continue.`
 
-    const infobipRes = await fetch(
-     `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`,
-     {
+    // ================= DEBUG BLOCK =================
+
+    console.log("📤 About to send WhatsApp message")
+
+    console.log("🔑 API KEY (first 10):", process.env.INFOBIP_API_KEY?.slice(0,10))
+    console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
+    console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
+
+    const payload = {
+      from: process.env.INFOBIP_SENDER,
+      to: phone,
+      content: {
+        text: message
+      }
+    }
+
+    const headers = {
+      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+      "Content-Type": "application/json"
+    }
+
+    const url = `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`
+
+    console.log("📤 FULL REQUEST URL:", url)
+    console.log("📤 HEADERS:", headers)
+    console.log("📤 PAYLOAD:", payload)
+
+    const infobipRes = await fetch(url, {
       method: "POST",
-      headers: {
-       "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-       "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-       from: process.env.INFOBIP_SENDER,
-       to: phone,
-       content: { text: message }
-      })
-     }
-    )
+      headers,
+      body: JSON.stringify(payload)
+    })
 
     const infobipText = await infobipRes.text()
 
     console.log("📤 Infobip status:", infobipRes.status)
     console.log("📤 Infobip response:", infobipText)
+
+    // ================= END DEBUG =================
 
    }catch(e){
     console.error("❌ WhatsApp message failed:", e)
@@ -374,11 +382,7 @@ Or type "Hi" to continue.`
    })
   }
 
-  logResponse({
-   requestId,
-   action,
-   response
-  })
+  logResponse({ requestId, action, response })
 
   return res.status(200).json({
    success:true,
