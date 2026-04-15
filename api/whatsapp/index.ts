@@ -48,7 +48,6 @@ export default async function handler(
 
  try{
 
-  // 📥 SAFE LOGGING
   logRequest({
    requestId,
    method: req.method,
@@ -74,18 +73,20 @@ export default async function handler(
 
   let response:any
 
-  // 🧠 INIT SESSION
+  // INIT SESSION
   if(action === "initSession"){
    response = await initSession(body.phone as string)
   }
 
-  // 👤 CHECK USER
+  // CHECK USER
   else if(action === "checkUser"){
    response = await checkUser(body.phone as string)
   }
 
-  // 📝 REGISTER USER (UPDATED - WHATSAPP MESSAGE)
+  // REGISTER USER (UPDATED)
   else if(action === "register"){
+
+   console.log("🚀 REGISTER ACTION TRIGGERED")
 
    const result = await registerUser(
     body.token,
@@ -95,21 +96,35 @@ export default async function handler(
     body.pin
    )
 
-   response = result
+   console.log("📦 REGISTER RESULT:", result)
 
-   const phone = result.data.phone
+   if(!result.success){
+    console.log("❌ Registration failed")
+    return res.status(400).json(result)
+   }
+
+   const data = result.data || result
+
+   const phone = data.phone
+   const firstName = data.firstName
+   const accountNumber = data.accountNumber
+   const balance = data.balance
+
+   console.log("📞 Phone:", phone)
+
+   response = result
 
    try{
 
-    const formattedBalance = Number(
-     result.data.balance
-    ).toLocaleString()
+    console.log("📤 About to send WhatsApp message")
 
-    const message = `🎉 Welcome ${result.data.firstName}!
+    const formattedBalance = Number(balance).toLocaleString()
+
+    const message = `🎉 Welcome ${firstName}!
 
 Your Bank-IB account has been created successfully.
 
-💳 Account Number: ${result.data.accountNumber}
+💳 Account Number: ${accountNumber}
 💰 Balance: ₦${formattedBalance}
 
 Reply with:
@@ -119,20 +134,26 @@ Reply with:
 
 Or type "Hi" to continue.`
 
-    await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
-     method: "POST",
-     headers: {
-      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-      "Content-Type": "application/json"
-     },
-     body: JSON.stringify({
-      from: process.env.INFOBIP_SENDER,
-      to: phone,
-      content: { text: message }
-     })
-    })
+    const infobipRes = await fetch(
+     `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`,
+     {
+      method: "POST",
+      headers: {
+       "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+       "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+       from: process.env.INFOBIP_SENDER,
+       to: phone,
+       content: { text: message }
+      })
+     }
+    )
 
-    console.log("✅ WhatsApp onboarding message sent")
+    const infobipText = await infobipRes.text()
+
+    console.log("📤 Infobip status:", infobipRes.status)
+    console.log("📤 Infobip response:", infobipText)
 
    }catch(e){
     console.error("❌ WhatsApp message failed:", e)
@@ -140,24 +161,22 @@ Or type "Hi" to continue.`
 
   }
 
-  // 🏦 CREATE ACCOUNT
+  // CREATE ACCOUNT
   else if(action === "createAccount"){
    response = await createAccount(body.phone)
   }
 
-  // 💰 BALANCE
+  // BALANCE
   else if(action === "balance"){
    response = await getBalance(body.phone, body.accountNumber)
   }
 
-  // 🔍 RESOLVE ACCOUNT
+  // RESOLVE ACCOUNT
   else if(action === "resolveAccount"){
-   response = await resolveAccount(
-    body.accountNumber as string
-   )
+   response = await resolveAccount(body.accountNumber as string)
   }
 
-  // 🧠 CONFIRM TRANSFER DETAILS
+  // CONFIRM TRANSFER DETAILS
   else if(action === "confirmTransferDetails"){
    response = await confirmTransferDetails(
     body.accountNumber as string,
@@ -165,7 +184,7 @@ Or type "Hi" to continue.`
    )
   }
 
-  // 💸 DIRECT TRANSFER
+  // TRANSFER
   else if(action === "transfer"){
 
    const { fromAccount, toAccount, amount, phone, pin } = body
@@ -184,22 +203,21 @@ Or type "Hi" to continue.`
    )
   }
 
-  // 🔐 INITIATE TRANSFER (OTP)
+  // OTP FLOW
   else if(action === "initiateTransfer"){
    response = await initiateTransfer(body)
   }
 
-  // 🔐 CONFIRM TRANSFER (OTP)
   else if(action === "confirmTransfer"){
    response = await confirmTransfer(body)
   }
 
-  // 📜 TRANSACTION HISTORY
+  // TRANSACTIONS
   else if(action === "transactions"){
    response = await getTransactionHistory(body.phone)
   }
 
-  // ➕ ADD BENEFICIARY
+  // BENEFICIARIES
   else if(action === "addBeneficiary"){
    response = await addBeneficiary(
     body.phone,
@@ -210,7 +228,6 @@ Or type "Hi" to continue.`
    )
   }
 
-  // ⭐ FAVORITE BENEFICIARY
   else if(action === "favoriteBeneficiary"){
    response = await favoriteBeneficiary(
     body.phone,
@@ -218,17 +235,15 @@ Or type "Hi" to continue.`
    )
   }
 
-  // 📋 GET BENEFICIARIES
   else if(action === "getBeneficiaries"){
    response = await getBeneficiaries(body.phone)
   }
 
-  // 🏦 GET ACCOUNTS
   else if(action === "getAccounts"){
    response = await getAccounts(body.phone)
   }
 
-  // 🔐 CHANGE PIN
+  // CHANGE PIN
   else if(action === "changePin"){
    response = await changePin(
     body.phone,
@@ -237,7 +252,7 @@ Or type "Hi" to continue.`
    )
   }
 
-  // 📱 AIRTIME
+  // AIRTIME
   else if(action === "airtime"){
 
    const { phone, amount, network, fromAccount } = body
@@ -272,7 +287,7 @@ Or type "Hi" to continue.`
    response = result
   }
 
-  // 📶 DATA
+  // DATA
   else if(action === "data"){
 
    const {
@@ -316,7 +331,7 @@ Or type "Hi" to continue.`
    response = result
   }
 
-  // 🔄 RESET PIN
+  // RESET PIN
   else if(action === "resetPin"){
 
    const bcrypt = require("bcryptjs")
@@ -346,7 +361,6 @@ Or type "Hi" to continue.`
    }
   }
 
-  // ❌ UNKNOWN
   else{
    return res.status(404).json({
     success:false,
@@ -355,7 +369,6 @@ Or type "Hi" to continue.`
    })
   }
 
-  // 📤 LOG RESPONSE
   logResponse({
    requestId,
    action,
