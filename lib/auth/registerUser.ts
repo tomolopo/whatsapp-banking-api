@@ -10,7 +10,7 @@ const DEFAULT_BALANCE = Number(
  process.env.DEFAULT_ACCOUNT_BALANCE || 1000000
 )
 
-const BANK_CODE = "999" // Bank-IB
+const BANK_CODE = "999"
 
 /*
  GENERATE UNIQUE ACCOUNT NUMBER
@@ -23,25 +23,18 @@ function generateAccountNumber(){
 
 /*
  REGISTER USER + CREATE ACCOUNT (ATOMIC)
+ NOW SUPPORTS:
+ 1. TOKEN FLOW (WEB)
+ 2. DIRECT PHONE FLOW (WHATSAPP)
 */
 export async function registerUser(
- token: string,
- firstName: string,
- lastName: string,
- address: string,
- pin: string
+ token?: string,
+ phone?: string,
+ firstName?: string,
+ lastName?: string,
+ address?: string,
+ pin?: string
 ){
-
- if(!token){
-  throw new Error("Token is required")
- }
-
- // 🔐 VERIFY TOKEN → GET PHONE
- const phone = verifyToken(token)
-
- if(!phone){
-  throw new Error("Invalid or expired token")
- }
 
  if(!firstName || !lastName || !address || !pin){
   throw new Error("All fields are required")
@@ -49,6 +42,26 @@ export async function registerUser(
 
  if(pin.length < 4){
   throw new Error("PIN must be at least 4 digits")
+ }
+
+ let resolvedPhone:string | null = null
+
+ // 🔐 TOKEN FLOW (WEB)
+ if(token){
+  resolvedPhone = verifyToken(token)
+
+  if(!resolvedPhone){
+   throw new Error("Invalid or expired token")
+  }
+ }
+
+ // 📱 DIRECT FLOW (WHATSAPP)
+ else if(phone){
+  resolvedPhone = phone
+ }
+
+ else{
+  throw new Error("Token or phone is required")
  }
 
  const client = await pool.connect()
@@ -60,7 +73,7 @@ export async function registerUser(
   // ❗ CHECK IF USER EXISTS
   const existing = await client.query(
    `SELECT id FROM users WHERE phone=$1`,
-   [phone]
+   [resolvedPhone]
   )
 
   if(existing.rows.length){
@@ -87,7 +100,7 @@ export async function registerUser(
    `,
    [
     userId,
-    phone,
+    resolvedPhone,
     firstName,
     lastName,
     address,
@@ -142,7 +155,7 @@ export async function registerUser(
   return {
    success: true,
    data: {
-    phone,
+    phone: resolvedPhone,
     firstName,
     lastName,
     accountNumber,
@@ -162,5 +175,4 @@ export async function registerUser(
   client.release()
 
  }
-
 }

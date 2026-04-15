@@ -86,6 +86,7 @@ export default async function handler(
 
    const result = await registerUser(
     body.token,
+    body.phone,
     body.firstName,
     body.lastName,
     body.address,
