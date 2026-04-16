@@ -29,6 +29,9 @@ import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
 import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
 import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary"
 
+// ✅ NEW
+import { sendSuccess, sendError } from "../../lib/utils/response"
+
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
@@ -58,14 +61,15 @@ export default async function handler(
   const action = req.query.action as string
 
   if(!action){
-   return res.status(400).json({
-    success:false,
-    error:"action parameter required",
-    requestId
-   })
+   return sendError(res, requestId, {
+    code: "BAD_REQUEST",
+    message: "action parameter required"
+   }, 400)
   }
 
-  const body = req.method === "GET" ? req.query : req.body || {}
+  const body = req.method === "GET"
+   ? req.query
+   : req.body || {}
 
   let response:any
 
@@ -79,10 +83,8 @@ export default async function handler(
    response = await checkUser(body.phone as string)
   }
 
-  // REGISTER USER
+  // REGISTER
   else if(action === "register"){
-
-   console.log("🚀 REGISTER ACTION TRIGGERED")
 
    const result = await registerUser(
     body.token,
@@ -93,110 +95,37 @@ export default async function handler(
     body.pin
    )
 
-   console.log("📦 REGISTER RESULT:", result)
-
-   if(!result.success){
-    console.log("❌ Registration failed")
-    return res.status(400).json(result)
-   }
-
-   const data = result.data || result
-
-   const phone = data.phone
-   const firstName = data.firstName
-   const accountNumber = data.accountNumber
-   const balance = data.balance
-
-   console.log("📞 Phone:", phone)
-
    response = result
 
+   const data = result?.data || result
+
+   const phone = data.phone
+
    try{
-
-    const formattedBalance = Number(balance).toLocaleString()
-
-    const message = `🎉 Welcome ${firstName}!
+    const message = `🎉 Welcome ${data.firstName}!
 
 Your Bank-IB account has been created successfully.
 
-💳 Account Number: ${accountNumber}
-💰 Balance: ₦${formattedBalance}
+💳 Account Number: ${data.accountNumber}
+💰 Balance: ₦${Number(data.balance).toLocaleString()}
 
-Reply with:
-1. Check Balance
-2. Transfer Money
-3. Buy Airtime
+Reply "Hi" to continue.`
 
-Or type "Hi" to continue.`
-
-    // ================= DEBUG BLOCK =================
-
-    console.log("📤 About to send WhatsApp message")
-
-    console.log("🔑 API KEY (first 10):", process.env.INFOBIP_API_KEY?.slice(0,10))
-    console.log("🌐 BASE URL:", process.env.INFOBIP_BASE_URL)
-    console.log("📨 SENDER:", process.env.INFOBIP_SENDER)
-
-    // 🔍 DEEP DEBUG FOR API KEY
-    console.log("🔑 API KEY LENGTH:", process.env.INFOBIP_API_KEY?.length)
-    console.log("🔑 API KEY RAW:", JSON.stringify(process.env.INFOBIP_API_KEY))
-
-    console.log("🔐 FINAL AUTH HEADER:", `App ${process.env.INFOBIP_API_KEY}`)
-
-    console.log("📱 PHONE:", phone)
-    console.log("📝 MESSAGE:", message)
-
-    let payload
-    try {
-      payload = {
-        from: process.env.INFOBIP_SENDER,
-        to: phone,
-        content: {
-          text: message
-        }
-      }
-      console.log("✅ Payload built")
-    } catch(e){
-      console.error("❌ Payload error:", e)
-    }
-
-    let headers
-    try {
-      headers = {
-        "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-        "Content-Type": "application/json"
-      }
-      console.log("✅ Headers built")
-    } catch(e){
-      console.error("❌ Header error:", e)
-    }
-
-    let url
-    try {
-      url = `${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`
-      console.log("📤 FULL REQUEST URL:", url)
-    } catch(e){
-      console.error("❌ URL error:", e)
-    }
-
-    console.log("📤 HEADERS:", headers)
-    console.log("📤 PAYLOAD:", payload)
-
-    const infobipRes = await fetch(url as string, {
-      method: "POST",
-      headers: headers as any,
-      body: JSON.stringify(payload)
+    await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
+     method: "POST",
+     headers: {
+      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
+      "Content-Type": "application/json"
+     },
+     body: JSON.stringify({
+      from: process.env.INFOBIP_SENDER,
+      to: phone,
+      content: { text: message }
+     })
     })
 
-    const infobipText = await infobipRes.text()
-
-    console.log("📤 Infobip status:", infobipRes.status)
-    console.log("📤 Infobip response:", infobipText)
-
-    // ================= END DEBUG =================
-
    }catch(e){
-    console.error("❌ WhatsApp message failed:", e)
+    console.error("WhatsApp send failed:", e)
    }
 
   }
@@ -216,7 +145,7 @@ Or type "Hi" to continue.`
    response = await resolveAccount(body.accountNumber as string)
   }
 
-  // CONFIRM TRANSFER DETAILS
+  // CONFIRM TRANSFER
   else if(action === "confirmTransferDetails"){
    response = await confirmTransferDetails(
     body.accountNumber as string,
@@ -227,29 +156,17 @@ Or type "Hi" to continue.`
   // TRANSFER
   else if(action === "transfer"){
 
-   const { fromAccount, toAccount, amount, phone, pin } = body
-
    const idempotencyKey =
-    (req.headers["idempotency-key"] ||
-     req.headers["Idempotency-Key"]) as string || uuid()
+    (req.headers["idempotency-key"] as string) || uuid()
 
    response = await executeTransfer(
-    fromAccount,
-    toAccount,
-    Number(amount),
-    phone,
-    pin,
+    body.fromAccount,
+    body.toAccount,
+    Number(body.amount),
+    body.phone,
+    body.pin,
     idempotencyKey
    )
-  }
-
-  // OTP FLOW
-  else if(action === "initiateTransfer"){
-   response = await initiateTransfer(body)
-  }
-
-  else if(action === "confirmTransfer"){
-   response = await confirmTransfer(body)
   }
 
   // TRANSACTIONS
@@ -295,19 +212,17 @@ Or type "Hi" to continue.`
   // AIRTIME
   else if(action === "airtime"){
 
-   const { phone, amount, network, fromAccount } = body
-
    const acc = await pool.query(
     `SELECT id, balance FROM accounts WHERE account_number=$1`,
-    [fromAccount]
+    [body.fromAccount]
    )
 
    if(!acc.rows.length){
-    throw new Error("Account not found")
+    throw { code: "NOT_FOUND", message: "Account not found" }
    }
 
-   if(acc.rows[0].balance < amount){
-    throw new Error("Insufficient funds")
+   if(acc.rows[0].balance < body.amount){
+    throw { code: "INSUFFICIENT_FUNDS", message: "Insufficient funds" }
    }
 
    const client = await pool.connect()
@@ -316,9 +231,9 @@ Or type "Hi" to continue.`
    const result = await purchaseAirtime(
     client,
     acc.rows[0].id,
-    Number(amount),
-    phone,
-    network
+    Number(body.amount),
+    body.phone,
+    body.network
    )
 
    await client.query("COMMIT")
@@ -330,26 +245,17 @@ Or type "Hi" to continue.`
   // DATA
   else if(action === "data"){
 
-   const {
-    phone,
-    amount,
-    network,
-    fromAccount,
-    plan,
-    duration
-   } = body
-
    const acc = await pool.query(
     `SELECT id, balance FROM accounts WHERE account_number=$1`,
-    [fromAccount]
+    [body.fromAccount]
    )
 
    if(!acc.rows.length){
-    throw new Error("Account not found")
+    throw { code: "NOT_FOUND", message: "Account not found" }
    }
 
-   if(acc.rows[0].balance < amount){
-    throw new Error("Insufficient funds")
+   if(acc.rows[0].balance < body.amount){
+    throw { code: "INSUFFICIENT_FUNDS", message: "Insufficient funds" }
    }
 
    const client = await pool.connect()
@@ -358,11 +264,11 @@ Or type "Hi" to continue.`
    const result = await purchaseData(
     client,
     acc.rows[0].id,
-    Number(amount),
-    phone,
-    network,
-    plan,
-    duration
+    Number(body.amount),
+    body.phone,
+    body.network,
+    body.plan,
+    body.duration
    )
 
    await client.query("COMMIT")
@@ -376,13 +282,7 @@ Or type "Hi" to continue.`
 
    const bcrypt = require("bcryptjs")
 
-   const { phone, newPin } = body
-
-   if(!phone || !newPin){
-    throw new Error("phone and newPin required")
-   }
-
-   const hash = await bcrypt.hash(newPin, 10)
+   const hash = await bcrypt.hash(body.newPin, 10)
 
    await pool.query(
     `
@@ -392,44 +292,34 @@ Or type "Hi" to continue.`
         pin_locked_until=NULL
     WHERE phone=$2
     `,
-    [hash, phone]
+    [hash, body.phone]
    )
 
    response = {
-    success: true,
     message: "PIN reset successfully"
    }
   }
 
   else{
-   return res.status(404).json({
-    success:false,
-    error:"Unknown action",
-    requestId
-   })
+   return sendError(res, requestId, {
+    code: "NOT_FOUND",
+    message: "Unknown action"
+   }, 404)
   }
 
   logResponse({ requestId, action, response })
 
-  return res.status(200).json({
-   success:true,
+  return sendSuccess(
+   res,
    requestId,
-   data: response
-  })
+   response?.data || response,
+   response?.meta || null
+  )
 
  }catch(err:any){
 
-  console.error("❌ ERROR:", {
-   requestId,
-   message: err.message,
-   stack: err.stack
-  })
+  console.error("❌ ERROR:", err)
 
-  return res.status(500).json({
-   success:false,
-   error: err.message || "internal server error",
-   requestId
-  })
-
+  return sendError(res, requestId, err)
  }
 }
