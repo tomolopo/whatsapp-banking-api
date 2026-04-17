@@ -29,6 +29,12 @@ import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
 import { getBeneficiaries } from "../../lib/beneficiaries/getBeneficiaries"
 import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary"
 
+import { generateStatementPDF } from "../../lib/pdf/statement"
+import { generateReceiptPDF } from "../../lib/pdf/receipt"
+
+import { uploadToSupabase } from "../../lib/storage/upload"
+import fs from "fs"
+
 // ✅ NEW
 import { sendSuccess, sendError } from "../../lib/utils/response"
 
@@ -208,6 +214,121 @@ Reply "Hi" to continue.`
     body.newPin
    )
   }
+
+  // STATEMENT PDF
+  // 📄 ACCOUNT STATEMENT
+else if(action === "statement"){
+
+ const { accountNumber, fromDate, toDate } = body
+
+ if(!accountNumber || !fromDate || !toDate){
+  throw {
+   code: "BAD_REQUEST",
+   message: "accountNumber, fromDate and toDate are required"
+  }
+ }
+
+ // ✅ FIXED QUERY (WITH BRACKETS)
+ const result = await pool.query(
+  `
+  SELECT *
+  FROM transactions
+  WHERE (from_account=$1 OR to_account=$1)
+  AND created_at BETWEEN $2 AND $3
+  ORDER BY created_at DESC
+  `,
+  [accountNumber, fromDate, toDate]
+ )
+
+ if(!result.rows.length){
+  throw {
+   code: "NO_TRANSACTIONS",
+   message: "No transactions found for this period"
+  }
+ }
+
+ // ✅ MAP TYPE (CREDIT / DEBIT)
+ const transactions = result.rows.map((tx:any)=>({
+  ...tx,
+  type: tx.from_account === accountNumber ? "debit" : "credit"
+ }))
+
+ const fileName = `statements/statement-${accountNumber}-${Date.now()}.pdf`
+
+ const filePath:any = await generateStatementPDF(
+  accountNumber,
+  transactions // 👈 use mapped transactions
+ )
+
+ // ✅ Upload to Supabase
+ const fileUrl = await uploadToSupabase(filePath, fileName)
+
+ // 🧹 Safe cleanup
+ try{
+  fs.unlinkSync(filePath)
+ }catch(e){
+  console.warn("Temp file cleanup failed:", e)
+ }
+
+ response = {
+  message: "Statement generated successfully",
+  url: fileUrl,
+  accountNumber,
+  fromDate,
+  toDate,
+  totalTransactions: transactions.length
+ }
+}
+
+// RECEIPT PDF
+else if(action === "receipt"){
+
+ const { transactionId } = body
+
+ if(!transactionId){
+  throw {
+   code: "BAD_REQUEST",
+   message: "transactionId is required"
+  }
+ }
+
+ const tx = await pool.query(
+  `SELECT * FROM transactions WHERE id=$1`,
+  [transactionId]
+ )
+
+ if(!tx.rows.length){
+  throw {
+   code: "NOT_FOUND",
+   message: "Transaction not found"
+  }
+ }
+
+ const transaction = tx.rows[0]
+
+ const fileName = `receipts/receipt-${transactionId}-${Date.now()}.pdf`
+
+ const filePath:any = await generateReceiptPDF(transaction)
+
+ // ✅ Upload to Supabase
+ const fileUrl = await uploadToSupabase(filePath, fileName)
+
+ // 🧹 Clean temp file safely
+ try{
+  fs.unlinkSync(filePath)
+ }catch(e){
+  console.warn("Temp file cleanup failed:", e)
+ }
+
+ response = {
+  message: "Receipt generated successfully",
+  url: fileUrl,
+  transactionId: transaction.id,
+  amount: transaction.amount,
+  status: transaction.status,
+  createdAt: transaction.created_at
+ }
+}
 
   // AIRTIME
   else if(action === "airtime"){

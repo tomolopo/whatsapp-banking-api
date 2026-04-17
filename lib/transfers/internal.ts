@@ -6,6 +6,10 @@ import { checkIdempotency, saveIdempotency } from "../idempotency"
 import { runFraudChecks } from "../fraud"
 import { validatePin } from "../auth/validatePin"
 
+import { generateReceiptPDF } from "../pdf/receipt"
+import { uploadToSupabase } from "../storage/upload"
+import fs from "fs"
+
 export async function internalTransfer(
  fromAccountNumber: string,
  toAccountNumber: string,
@@ -70,7 +74,7 @@ export async function internalTransfer(
 
   const txId = uuid()
 
-  // ✅ STEP 1: CREATE TRANSACTION FIRST (FIXED)
+  // ✅ CREATE TRANSACTION
   await client.query(
    `
    INSERT INTO transactions(id, amount, status, type, reference)
@@ -79,7 +83,7 @@ export async function internalTransfer(
    [txId, amount, "completed", "transfer", `TX-${Date.now()}`]
   )
 
-  // ✅ STEP 2: UPDATE BALANCES
+  // ✅ UPDATE BALANCES
   await client.query(
    `UPDATE accounts SET balance = balance - $1 WHERE id=$2`,
    [amount, from.rows[0].id]
@@ -90,16 +94,50 @@ export async function internalTransfer(
    [amount, to.rows[0].id]
   )
 
-  // ✅ STEP 3: LEDGER (WITH CLIENT)
+  // ✅ LEDGER
   await createLedgerEntry(client, from.rows[0].id, amount, 0, txId)
   await createLedgerEntry(client, to.rows[0].id, 0, amount, txId)
 
   await client.query("COMMIT")
 
+  // 🧾 GENERATE RECEIPT (AFTER COMMIT)
+  let receiptUrl: string | null = null
+
+  try{
+
+   const fileName = `receipts/receipt-${txId}-${Date.now()}.pdf`
+
+   const transaction = {
+    id: txId,
+    amount,
+    status: "completed",
+    from_account: fromAccountNumber,
+    to_account: toAccountNumber,
+    created_at: new Date().toISOString()
+   }
+
+   const filePath: any = await generateReceiptPDF(transaction)
+
+   receiptUrl = await uploadToSupabase(filePath, fileName)
+
+   // 🧹 cleanup
+   try{
+    fs.unlinkSync(filePath)
+   }catch(e){
+    console.warn("Temp cleanup failed:", e)
+   }
+
+  }catch(e){
+   console.error("❌ Receipt generation failed:", e)
+  }
+
   const response = {
    success: true,
    transactionId: txId,
    amount,
+   fromAccount: fromAccountNumber,
+   toAccount: toAccountNumber,
+   receiptUrl, // 👈 NEW
    fraudScore: fraudResult.riskScore
   }
 
@@ -119,5 +157,4 @@ export async function internalTransfer(
  }finally{
   client.release()
  }
-
 }

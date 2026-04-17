@@ -5,6 +5,7 @@
     "node": "20.x"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
     "@upstash/redis": "^1.25.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
