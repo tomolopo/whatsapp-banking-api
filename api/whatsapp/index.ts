@@ -1,5 +1,7 @@
-import { VercelRequest, VercelResponse } from "@vercel/node"
+import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { v4 as uuid } from "uuid"
+import bcrypt from "bcryptjs"
+import fs from "fs"
 
 import { checkUser } from "../../lib/auth/checkUser"
 import { registerUser } from "../../lib/auth/registerUser"
@@ -9,20 +11,21 @@ import { getTransactionHistory } from "../../lib/transactions/history"
 import { initSession } from "../../lib/session/initSession"
 
 import { executeTransfer } from "../../lib/transfers/transfers"
-import { initiateTransfer, confirmTransfer } from "../../lib/transfers/transferWithOTP"
-
 import { resolveAccount } from "../../lib/transfers/resolveAccount"
 import { confirmTransferDetails } from "../../lib/transfers/confirmTransfer"
+import { verifyTransferToken } from "../../lib/onboarding/token"
 
 import { logRequest, logResponse } from "../../lib/logger"
-
 import { changePin } from "../../lib/auth/changePin"
+import { verifyOTP } from "../../lib/otp"
+import { validatePin } from "../../lib/auth/validatePin"
+import { checkIdempotency, saveIdempotency } from "../../lib/idempotency"
+import { runFraudChecks } from "../../lib/fraud"
 
 import { purchaseAirtime } from "../../lib/services/airtime"
 import { purchaseData } from "../../lib/services/data"
 
 import { pool } from "../../lib/db"
-
 import { getAccounts } from "../../lib/accounts/getAccount"
 
 import { addBeneficiary } from "../../lib/beneficiaries/addBeneficiary"
@@ -31,296 +34,315 @@ import { favoriteBeneficiary } from "../../lib/beneficiaries/favoriteBeneficiary
 
 import { generateStatementPDF } from "../../lib/pdf/statement"
 import { generateReceiptPDF } from "../../lib/pdf/receipt"
-
 import { uploadToSupabase } from "../../lib/storage/upload"
-import fs from "fs"
 
-// ✅ NEW
 import { sendSuccess, sendError } from "../../lib/utils/response"
+import { AppError } from "../../lib/utils/errors"
+import { applyCors } from "../../lib/utils/cors"
+
+async function uploadAndCleanup(filePath: string, fileName: string): Promise<string> {
+ try{
+  return await uploadToSupabase(filePath, fileName)
+ }finally{
+  try{ fs.unlinkSync(filePath) }catch{ /* ignore */ }
+ }
+}
+
+async function sendWhatsAppText(to: string, text: string): Promise<void> {
+ const base = process.env.INFOBIP_BASE_URL
+ const apiKey = process.env.INFOBIP_API_KEY
+ const sender = process.env.INFOBIP_SENDER
+
+ if(!base || !apiKey || !sender) return
+
+ const res = await fetch(`${base}/whatsapp/1/message/text`, {
+  method: "POST",
+  headers: {
+   Authorization: `App ${apiKey}`,
+   "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+   from: sender,
+   to,
+   content: { text }
+  })
+ })
+
+ if(!res.ok){
+  const body = await res.text().catch(()=>"")
+  console.error("WhatsApp send failed:", res.status, body)
+ }
+}
 
 export default async function handler(
  req: VercelRequest,
  res: VercelResponse
 ){
 
- res.setHeader("Access-Control-Allow-Origin","*")
- res.setHeader("Access-Control-Allow-Methods","POST,GET,OPTIONS")
- res.setHeader("Access-Control-Allow-Headers","Content-Type, idempotency-key")
-
- if(req.method === "OPTIONS"){
-  return res.status(200).end()
- }
+ if(applyCors(req, res, ["POST", "GET", "OPTIONS"])) return
 
  const requestId = (req.headers["x-request-id"] as string) || uuid()
 
  try{
-
   logRequest({
    requestId,
    method: req.method,
    url: req.url,
    query: req.query || {},
    body: req.body || {},
-   headers: req.headers || {}
+   headers: req.headers as Record<string, unknown>
   })
 
   const action = req.query.action as string
 
   if(!action){
-   return sendError(res, requestId, {
-    code: "BAD_REQUEST",
-    message: "action parameter required"
-   }, 400)
+   return sendError(res, requestId, new AppError("BAD_REQUEST", "action parameter required", 400))
   }
 
-  const body = req.method === "GET"
-   ? req.query
-   : req.body || {}
+  const body: Record<string, unknown> = req.method === "GET"
+   ? (req.query as Record<string, unknown>)
+   : (req.body || {})
 
-  let response:any
+  let response: unknown
 
-  // INIT SESSION
   if(action === "initSession"){
    response = await initSession(body.phone as string)
-  }
 
-  // CHECK USER
-  else if(action === "checkUser"){
+  } else if(action === "checkUser"){
    response = await checkUser(body.phone as string)
-  }
 
-  // REGISTER
-  else if(action === "register"){
-
+  } else if(action === "register"){
    const result = await registerUser(
-    body.token,
-    body.phone,
-    body.firstName,
-    body.lastName,
-    body.address,
-    body.pin
+    body.token as string,
+    body.phone as string,
+    body.firstName as string,
+    body.lastName as string,
+    body.address as string,
+    body.pin as string
    )
 
    response = result
+   const data = result?.data
 
-   const data = result?.data || result
-
-   const phone = data.phone
-
-   try{
-    const message = `🎉 Welcome ${data.firstName}!
-
-Your Bank-IB account has been created successfully.
-
-💳 Account Number: ${data.accountNumber}
-💰 Balance: ₦${Number(data.balance).toLocaleString()}
-
-Reply "Hi" to continue.`
-
-    await fetch(`${process.env.INFOBIP_BASE_URL}/whatsapp/1/message/text`, {
-     method: "POST",
-     headers: {
-      "Authorization": `App ${process.env.INFOBIP_API_KEY}`,
-      "Content-Type": "application/json"
-     },
-     body: JSON.stringify({
-      from: process.env.INFOBIP_SENDER,
-      to: phone,
-      content: { text: message }
-     })
-    })
-
-   }catch(e){
-    console.error("WhatsApp send failed:", e)
+   if(data?.phone){
+    const message = `Welcome ${data.firstName}!\n\nYour Bank-IB account has been created.\n\nAccount Number: ${data.accountNumber}\nBalance: ${Number(data.balance).toLocaleString()}\n\nReply "Hi" to continue.`
+    sendWhatsAppText(data.phone, message).catch(e =>
+     console.error("Welcome WhatsApp failed:", e)
+    )
    }
 
-  }
+  } else if(action === "createAccount"){
+   response = await createAccount(body.phone as string)
 
-  // CREATE ACCOUNT
-  else if(action === "createAccount"){
-   response = await createAccount(body.phone)
-  }
+  } else if(action === "balance"){
+   response = await getBalance(body.phone as string, body.accountNumber as string)
 
-  // BALANCE
-  else if(action === "balance"){
-   response = await getBalance(body.phone, body.accountNumber)
-  }
-
-  // RESOLVE ACCOUNT
-  else if(action === "resolveAccount"){
+  } else if(action === "resolveAccount"){
    response = await resolveAccount(body.accountNumber as string)
-  }
 
-  // CONFIRM TRANSFER
-  else if(action === "confirmTransferDetails"){
+  } else if(action === "confirmTransferDetails"){
    response = await confirmTransferDetails(
     body.accountNumber as string,
     Number(body.amount)
    )
-  }
 
-  // TRANSFER
-  else if(action === "transfer"){
-
+  } else if(action === "transfer"){
    const idempotencyKey =
     (req.headers["idempotency-key"] as string) || uuid()
 
+   let fromAccount = body.fromAccount as string
+   let toAccount = body.toAccount as string
+   let amount = Number(body.amount)
+   let phone = body.phone as string
+
+   // If a signed token is supplied (from the confirm-transfer page),
+   // it is the source of truth — ignore tampered body fields.
+   if(typeof body.token === "string"){
+    const tokenData = verifyTransferToken(body.token)
+    if(!tokenData){
+     throw new AppError("UNAUTHORIZED", "Invalid or expired transfer token", 401)
+    }
+    fromAccount = tokenData.fromAccount
+    toAccount = tokenData.toAccount
+    amount = tokenData.amount
+    phone = tokenData.phone
+   }
+
    response = await executeTransfer(
-    body.fromAccount,
-    body.toAccount,
-    Number(body.amount),
-    body.phone,
-    body.pin,
+    fromAccount,
+    toAccount,
+    amount,
+    phone,
+    body.pin as string,
     idempotencyKey
    )
-  }
 
-  // TRANSACTIONS
-  else if(action === "transactions"){
-   response = await getTransactionHistory(body.phone)
-  }
+  } else if(action === "transactions"){
+   response = await getTransactionHistory(body.phone as string)
 
-  // BENEFICIARIES
-  else if(action === "addBeneficiary"){
+  } else if(action === "addBeneficiary"){
    response = await addBeneficiary(
-    body.phone,
-    body.accountNumber,
-    body.bankCode,
-    body.name,
-    body.nickname
+    body.phone as string,
+    body.accountNumber as string,
+    body.bankCode as string,
+    body.name as string,
+    body.nickname as string
    )
-  }
 
-  else if(action === "favoriteBeneficiary"){
+  } else if(action === "favoriteBeneficiary"){
    response = await favoriteBeneficiary(
-    body.phone,
-    body.accountNumber
+    body.phone as string,
+    body.accountNumber as string
    )
-  }
 
-  else if(action === "getBeneficiaries"){
-   response = await getBeneficiaries(body.phone)
-  }
+  } else if(action === "getBeneficiaries"){
+   response = await getBeneficiaries(body.phone as string)
 
-  else if(action === "getAccounts"){
-   response = await getAccounts(body.phone)
-  }
+  } else if(action === "getAccounts"){
+   response = await getAccounts(body.phone as string)
 
-  // CHANGE PIN
-  else if(action === "changePin"){
+  } else if(action === "changePin"){
    response = await changePin(
-    body.phone,
-    body.oldPin,
-    body.newPin
+    body.phone as string,
+    body.oldPin as string,
+    body.newPin as string
    )
+
+  } else if(action === "statement"){
+   response = await handleStatement(body)
+
+  } else if(action === "receipt"){
+   response = await handleReceipt(body)
+
+  } else if(action === "airtime"){
+   response = await handleAirtime(body, req.headers["idempotency-key"] as string)
+
+  } else if(action === "data"){
+   response = await handleData(body, req.headers["idempotency-key"] as string)
+
+  } else if(action === "resetPin"){
+   response = await handleResetPin(body)
+
+  } else {
+   return sendError(res, requestId, new AppError("NOT_FOUND", "Unknown action", 404))
   }
 
-  // STATEMENT PDF
-  // 📄 ACCOUNT STATEMENT
-else if(action === "statement"){
+  logResponse({ requestId, action, response })
 
- const { accountNumber, fromDate, toDate } = body
+  const dataField =
+   response && typeof response === "object" && "data" in (response as Record<string, unknown>)
+    ? (response as Record<string, unknown>).data
+    : response
 
- if(!accountNumber || !fromDate || !toDate){
-  throw {
-   code: "BAD_REQUEST",
-   message: "accountNumber, fromDate and toDate are required"
-  }
+  const metaField =
+   response && typeof response === "object" && "meta" in (response as Record<string, unknown>)
+    ? (response as Record<string, unknown>).meta
+    : null
+
+  return sendSuccess(res, requestId, dataField, metaField)
+
+ }catch(err){
+  console.error("Handler error:", err)
+  return sendError(res, requestId, err)
+ }
+}
+
+async function handleStatement(body: Record<string, unknown>){
+ const accountNumber = body.accountNumber as string
+ const fromDate = body.fromDate as string
+ const toDate = body.toDate as string
+ const phone = body.phone as string
+
+ if(!accountNumber || !fromDate || !toDate || !phone){
+  throw new AppError("BAD_REQUEST", "phone, accountNumber, fromDate and toDate are required", 400)
  }
 
- // ✅ FIXED QUERY (WITH BRACKETS)
+ // Ownership check
+ const owned = await pool.query(
+  `
+  SELECT a.id
+  FROM accounts a
+  JOIN users u ON u.id = a.user_id
+  WHERE a.account_number=$1 AND u.phone=$2
+  `,
+  [accountNumber, phone]
+ )
+
+ if(!owned.rows.length){
+  throw new AppError("FORBIDDEN", "Account not found for this user", 403)
+ }
+
+ const accountId = owned.rows[0].id
+
  const result = await pool.query(
   `
-  SELECT *
-  FROM transactions
-  WHERE (from_account=$1 OR to_account=$1)
-  AND created_at BETWEEN $2 AND $3
-  ORDER BY created_at DESC
+  SELECT t.id,
+         t.amount,
+         t.status,
+         t.type,
+         t.reference,
+         t.created_at,
+         CASE WHEN le.debit > 0 THEN 'debit' ELSE 'credit' END AS direction,
+         le.debit,
+         le.credit
+  FROM transactions t
+  JOIN ledger_entries le ON le.transaction_id = t.id
+  WHERE le.account_id = $1
+    AND t.created_at BETWEEN $2 AND $3
+  ORDER BY t.created_at DESC
   `,
-  [accountNumber, fromDate, toDate]
+  [accountId, fromDate, toDate]
  )
 
  if(!result.rows.length){
-  throw {
-   code: "NO_TRANSACTIONS",
-   message: "No transactions found for this period"
-  }
+  throw new AppError("NO_TRANSACTIONS", "No transactions found for this period", 404)
  }
-
- // ✅ MAP TYPE (CREDIT / DEBIT)
- const transactions = result.rows.map((tx:any)=>({
-  ...tx,
-  type: tx.from_account === accountNumber ? "debit" : "credit"
- }))
 
  const fileName = `statements/statement-${accountNumber}-${Date.now()}.pdf`
+ const filePath = await generateStatementPDF(accountNumber, result.rows) as string
+ const fileUrl = await uploadAndCleanup(filePath, fileName)
 
- const filePath:any = await generateStatementPDF(
-  accountNumber,
-  transactions // 👈 use mapped transactions
- )
-
- // ✅ Upload to Supabase
- const fileUrl = await uploadToSupabase(filePath, fileName)
-
- // 🧹 Safe cleanup
- try{
-  fs.unlinkSync(filePath)
- }catch(e){
-  console.warn("Temp file cleanup failed:", e)
- }
-
- response = {
+ return {
   message: "Statement generated successfully",
   url: fileUrl,
   accountNumber,
   fromDate,
   toDate,
-  totalTransactions: transactions.length
+  totalTransactions: result.rows.length
  }
 }
 
-// RECEIPT PDF
-else if(action === "receipt"){
+async function handleReceipt(body: Record<string, unknown>){
+ const transactionId = body.transactionId as string
+ const phone = body.phone as string
 
- const { transactionId } = body
-
- if(!transactionId){
-  throw {
-   code: "BAD_REQUEST",
-   message: "transactionId is required"
-  }
+ if(!transactionId || !phone){
+  throw new AppError("BAD_REQUEST", "phone and transactionId are required", 400)
  }
 
  const tx = await pool.query(
-  `SELECT * FROM transactions WHERE id=$1`,
-  [transactionId]
+  `
+  SELECT t.*
+  FROM transactions t
+  JOIN ledger_entries le ON le.transaction_id = t.id
+  JOIN accounts a ON a.id = le.account_id
+  JOIN users u ON u.id = a.user_id
+  WHERE t.id=$1 AND u.phone=$2
+  LIMIT 1
+  `,
+  [transactionId, phone]
  )
 
  if(!tx.rows.length){
-  throw {
-   code: "NOT_FOUND",
-   message: "Transaction not found"
-  }
+  throw new AppError("NOT_FOUND", "Transaction not found", 404)
  }
 
  const transaction = tx.rows[0]
-
  const fileName = `receipts/receipt-${transactionId}-${Date.now()}.pdf`
+ const filePath = await generateReceiptPDF(transaction) as string
+ const fileUrl = await uploadAndCleanup(filePath, fileName)
 
- const filePath:any = await generateReceiptPDF(transaction)
-
- // ✅ Upload to Supabase
- const fileUrl = await uploadToSupabase(filePath, fileName)
-
- // 🧹 Clean temp file safely
- try{
-  fs.unlinkSync(filePath)
- }catch(e){
-  console.warn("Temp file cleanup failed:", e)
- }
-
- response = {
+ return {
   message: "Receipt generated successfully",
   url: fileUrl,
   transactionId: transaction.id,
@@ -330,117 +352,120 @@ else if(action === "receipt"){
  }
 }
 
-  // AIRTIME
-  else if(action === "airtime"){
+async function purchaseService(
+ body: Record<string, unknown>,
+ idempotencyKey: string | undefined,
+ runner: (client: import("pg").PoolClient, accountId: string, amount: number) => Promise<unknown>
+){
+ const phone = body.phone as string
+ const fromAccount = body.fromAccount as string
+ const pin = body.pin as string
+ const amount = Number(body.amount)
 
-   const acc = await pool.query(
-    `SELECT id, balance FROM accounts WHERE account_number=$1`,
-    [body.fromAccount]
-   )
+ if(!phone || !fromAccount || !pin){
+  throw new AppError("BAD_REQUEST", "phone, fromAccount and pin are required", 400)
+ }
+ if(!Number.isFinite(amount) || amount <= 0){
+  throw new AppError("BAD_REQUEST", "Invalid amount", 400)
+ }
 
-   if(!acc.rows.length){
-    throw { code: "NOT_FOUND", message: "Account not found" }
-   }
+ const key = idempotencyKey || uuid()
+ const cached = await checkIdempotency(key)
+ if(cached) return cached
 
-   if(acc.rows[0].balance < body.amount){
-    throw { code: "INSUFFICIENT_FUNDS", message: "Insufficient funds" }
-   }
+ await validatePin(phone, pin)
 
-   const client = await pool.connect()
-   await client.query("BEGIN")
+ const client = await pool.connect()
+ try{
+  await client.query("BEGIN")
 
-   const result = await purchaseAirtime(
-    client,
-    acc.rows[0].id,
-    Number(body.amount),
-    body.phone,
-    body.network
-   )
-
-   await client.query("COMMIT")
-   client.release()
-
-   response = result
-  }
-
-  // DATA
-  else if(action === "data"){
-
-   const acc = await pool.query(
-    `SELECT id, balance FROM accounts WHERE account_number=$1`,
-    [body.fromAccount]
-   )
-
-   if(!acc.rows.length){
-    throw { code: "NOT_FOUND", message: "Account not found" }
-   }
-
-   if(acc.rows[0].balance < body.amount){
-    throw { code: "INSUFFICIENT_FUNDS", message: "Insufficient funds" }
-   }
-
-   const client = await pool.connect()
-   await client.query("BEGIN")
-
-   const result = await purchaseData(
-    client,
-    acc.rows[0].id,
-    Number(body.amount),
-    body.phone,
-    body.network,
-    body.plan,
-    body.duration
-   )
-
-   await client.query("COMMIT")
-   client.release()
-
-   response = result
-  }
-
-  // RESET PIN
-  else if(action === "resetPin"){
-
-   const bcrypt = require("bcryptjs")
-
-   const hash = await bcrypt.hash(body.newPin, 10)
-
-   await pool.query(
-    `
-    UPDATE users
-    SET pin_hash=$1,
-        pin_attempts=0,
-        pin_locked_until=NULL
-    WHERE phone=$2
-    `,
-    [hash, body.phone]
-   )
-
-   response = {
-    message: "PIN reset successfully"
-   }
-  }
-
-  else{
-   return sendError(res, requestId, {
-    code: "NOT_FOUND",
-    message: "Unknown action"
-   }, 404)
-  }
-
-  logResponse({ requestId, action, response })
-
-  return sendSuccess(
-   res,
-   requestId,
-   response?.data || response,
-   response?.meta || null
+  const acc = await client.query(
+   `
+   SELECT a.id, a.balance
+   FROM accounts a
+   JOIN users u ON u.id = a.user_id
+   WHERE a.account_number=$1 AND u.phone=$2
+   FOR UPDATE
+   `,
+   [fromAccount, phone]
   )
 
- }catch(err:any){
+  if(!acc.rows.length){
+   throw new AppError("FORBIDDEN", "Account not found or not owned by this user", 403)
+  }
+  if(Number(acc.rows[0].balance) < amount){
+   throw new AppError("INSUFFICIENT_FUNDS", "Insufficient funds", 402)
+  }
 
-  console.error("❌ ERROR:", err)
+  const fraud = await runFraudChecks(client, acc.rows[0].id, amount)
+  if(fraud.riskScore >= 90){
+   throw new AppError("FRAUD_BLOCKED", "Transaction blocked: fraud risk", 403)
+  }
 
-  return sendError(res, requestId, err)
+  const result = await runner(client, acc.rows[0].id, amount)
+
+  await client.query("COMMIT")
+  await saveIdempotency(key, result)
+  return result
+
+ }catch(err){
+  await client.query("ROLLBACK")
+  throw err
+ }finally{
+  client.release()
  }
+}
+
+async function handleAirtime(body: Record<string, unknown>, idempotencyKey: string | undefined){
+ return purchaseService(body, idempotencyKey, (client, accountId, amount) =>
+  purchaseAirtime(client, accountId, amount, body.phone as string, body.network as string)
+ )
+}
+
+async function handleData(body: Record<string, unknown>, idempotencyKey: string | undefined){
+ return purchaseService(body, idempotencyKey, (client, accountId, amount) =>
+  purchaseData(
+   client,
+   accountId,
+   amount,
+   body.phone as string,
+   body.network as string,
+   body.plan as string,
+   body.duration as string
+  )
+ )
+}
+
+async function handleResetPin(body: Record<string, unknown>){
+ const phone = body.phone as string
+ const otp = body.otp as string
+ const newPin = body.newPin as string
+
+ if(!phone || !otp || !newPin){
+  throw new AppError("BAD_REQUEST", "phone, otp and newPin are required", 400)
+ }
+ if(!/^\d{4,}$/.test(newPin)){
+  throw new AppError("BAD_REQUEST", "PIN must be at least 4 digits", 400)
+ }
+
+ await verifyOTP(phone, otp)
+
+ const hash = await bcrypt.hash(newPin, 10)
+
+ const result = await pool.query(
+  `
+  UPDATE users
+  SET pin_hash=$1,
+      pin_attempts=0,
+      pin_locked_until=NULL
+  WHERE phone=$2
+  `,
+  [hash, phone]
+ )
+
+ if(result.rowCount === 0){
+  throw new AppError("NOT_FOUND", "No account associated with this phone", 404)
+ }
+
+ return { message: "PIN reset successfully" }
 }

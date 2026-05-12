@@ -1,79 +1,31 @@
-import { VercelRequest, VercelResponse } from "@vercel/node"
+import type { VercelRequest, VercelResponse } from "@vercel/node"
+import fs from "fs"
+import path from "path"
+import { verifyTransferToken } from "../lib/onboarding/token"
+import { escapeHtml } from "../lib/utils/escape"
 
 export default function handler(req: VercelRequest, res: VercelResponse){
 
- const { token } = req.query
+ const token = req.query.token
 
- if(!token){
+ if(typeof token !== "string" || !token){
   return res.status(400).send("Invalid link")
  }
 
- let data:any
-
- try{
-  data = JSON.parse(Buffer.from(token as string, "base64").toString())
- }catch{
-  return res.status(400).send("Invalid token")
+ if(!verifyTransferToken(token)){
+  return res.status(400).send("Invalid or expired token")
  }
 
- const { phone, fromAccount, toAccount, amount } = data
+ const filePath = path.join(process.cwd(), "frontend", "transfer.html")
+ let html = fs.readFileSync(filePath, "utf8")
 
- res.setHeader("Content-Type","text/html")
+ const apiBase = process.env.PUBLIC_BASE_URL || ""
 
- res.send(`
-  <html>
-   <body style="font-family:sans-serif; padding:20px;">
+ html = html
+  .replace('data-token=""', `data-token="${escapeHtml(token)}"`)
+  .replace("<body ", `<body data-api-base="${escapeHtml(apiBase)}" `)
 
-    <h2>Confirm Transfer</h2>
-
-    <p><b>From:</b> ${fromAccount}</p>
-    <p><b>To:</b> ${toAccount}</p>
-    <p><b>Amount:</b> ₦${amount}</p>
-
-    <input id="pin" type="password" placeholder="Enter PIN" />
-    <br/><br/>
-
-    <button onclick="submitTransfer()">Confirm</button>
-
-    <p id="msg"></p>
-
-    <script>
-     async function submitTransfer(){
-
-      const pin = document.getElementById("pin").value
-
-      const res = await fetch("/api/whatsapp?action=transfer",{
-       method:"POST",
-       headers:{
-        "Content-Type":"application/json",
-        "idempotency-key": Date.now().toString()
-       },
-       body: JSON.stringify({
-        phone: "${phone}",
-        fromAccount: "${fromAccount}",
-        toAccount: "${toAccount}",
-        amount: "${amount}",
-        pin
-       })
-      })
-
-      const data = await res.json()
-
-      if(data.success){
-        document.getElementById("msg").innerText = "✅ Transfer successful"
-
-        setTimeout(()=>{
-         window.location.href = "https://wa.me/${phone}"
-        },2000)
-
-      }else{
-        document.getElementById("msg").innerText = data.error
-      }
-     }
-    </script>
-
-   </body>
-  </html>
- `)
-
+ res.setHeader("Content-Type", "text/html; charset=utf-8")
+ res.setHeader("Cache-Control", "no-store")
+ res.status(200).send(html)
 }

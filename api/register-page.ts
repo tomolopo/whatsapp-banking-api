@@ -1,45 +1,31 @@
-import { VercelRequest, VercelResponse } from "@vercel/node"
+import type { VercelRequest, VercelResponse } from "@vercel/node"
 import fs from "fs"
 import path from "path"
 import { verifyToken } from "../lib/onboarding/token"
+import { escapeHtml } from "../lib/utils/escape"
 
-export default function handler(
- req: VercelRequest,
- res: VercelResponse
-){
+export default function handler(req: VercelRequest, res: VercelResponse){
 
- const { token } = req.query
+ const token = req.query.token
 
- if(!token){
+ if(typeof token !== "string" || !token){
   return res.status(400).send("Invalid link")
  }
 
- // 🔐 VERIFY TOKEN
- const phone = verifyToken(token as string)
-
- if(!phone){
+ if(!verifyToken(token)){
   return res.status(400).send("Invalid or expired token")
  }
 
- // 📄 LOAD HTML FILE
- const filePath = path.join(
-  process.cwd(),
-  "frontend",
-  "register.html"
- )
-
+ const filePath = path.join(process.cwd(), "frontend", "register.html")
  let html = fs.readFileSync(filePath, "utf8")
 
- // 🔥 INJECT TOKEN (NOT PHONE → more secure)
- html = html.replace("{{TOKEN}}", token as string)
+ const apiBase = process.env.PUBLIC_BASE_URL || "https://whatsapp-banking-api.vercel.app"
 
- // 🔥 OPTIONAL: inject API base URL (for flexibility)
- html = html.replace(
-  "{{API_BASE_URL}}",
-  "https://whatsapp-banking-api.vercel.app"
- )
+ html = html
+  .replace("{{TOKEN}}", escapeHtml(token))
+  .replace("{{API_BASE_URL}}", escapeHtml(apiBase))
 
- res.setHeader("Content-Type", "text/html")
+ res.setHeader("Content-Type", "text/html; charset=utf-8")
+ res.setHeader("Cache-Control", "no-store")
  res.status(200).send(html)
-
 }

@@ -1,5 +1,6 @@
 import { pool } from "../db"
 import bcrypt from "bcryptjs"
+import { AppError } from "../utils/errors"
 
 export async function changePin(
  phone: string,
@@ -8,50 +9,43 @@ export async function changePin(
 ){
 
  if(!phone || !oldPin || !newPin){
-  throw new Error("All fields are required")
+  throw new AppError("BAD_REQUEST", "All fields are required", 400)
  }
 
- if(newPin.length < 4){
-  throw new Error("PIN must be at least 4 digits")
+ if(!/^\d{4,}$/.test(newPin)){
+  throw new AppError("BAD_REQUEST", "PIN must be at least 4 digits", 400)
  }
 
  const user = await pool.query(
- `
- SELECT id, pin_hash
- FROM users
- WHERE phone=$1
- `,
- [phone]
+  `SELECT id, pin_hash FROM users WHERE phone=$1`,
+  [phone]
  )
 
  if(!user.rows.length){
-  throw new Error("User not found")
+  throw new AppError("UNAUTHORIZED", "Invalid credentials", 401)
  }
 
- const currentHash = user.rows[0].pin_hash
-
- const valid = await bcrypt.compare(oldPin, currentHash)
+ const valid = await bcrypt.compare(oldPin, user.rows[0].pin_hash)
 
  if(!valid){
-  throw new Error("Old PIN is incorrect")
+  throw new AppError("INVALID_PIN", "Old PIN is incorrect", 401)
  }
 
  const newHash = await bcrypt.hash(newPin, 10)
 
  await pool.query(
- `
- UPDATE users
- SET pin_hash=$1,
-     pin_attempts=0,
-     pin_locked_until=NULL
- WHERE phone=$2
- `,
- [newHash, phone]
+  `
+  UPDATE users
+  SET pin_hash=$1,
+      pin_attempts=0,
+      pin_locked_until=NULL
+  WHERE phone=$2
+  `,
+  [newHash, phone]
  )
 
  return {
   success: true,
   message: "PIN updated successfully"
  }
-
 }

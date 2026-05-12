@@ -1,32 +1,19 @@
 import { pool } from "../db"
 import { v4 as uuid } from "uuid"
+import { randomInt } from "crypto"
 import bcrypt from "bcryptjs"
 import { verifyToken } from "../onboarding/token"
+import { AppError } from "../utils/errors"
 
-/*
- CONFIG
-*/
-const DEFAULT_BALANCE = Number(
- process.env.DEFAULT_ACCOUNT_BALANCE || 1000000
-)
-
+const DEFAULT_BALANCE = Number(process.env.DEFAULT_ACCOUNT_BALANCE || 1000000)
 const BANK_CODE = "999"
+const MAX_ACCOUNT_NUM_RETRIES = 5
 
-/*
- GENERATE UNIQUE ACCOUNT NUMBER
-*/
-function generateAccountNumber(){
- return Math.floor(
-  1000000000 + Math.random() * 9000000000
- ).toString()
+function generateAccountNumber(): string {
+ // 10-digit account number, crypto-random
+ return randomInt(1_000_000_000, 10_000_000_000).toString()
 }
 
-/*
- REGISTER USER + CREATE ACCOUNT (ATOMIC)
- NOW SUPPORTS:
- 1. TOKEN FLOW (WEB)
- 2. DIRECT PHONE FLOW (WHATSAPP)
-*/
 export async function registerUser(
  token?: string,
  phone?: string,
@@ -37,118 +24,78 @@ export async function registerUser(
 ){
 
  if(!firstName || !lastName || !address || !pin){
-  throw new Error("All fields are required")
+  throw new AppError("BAD_REQUEST", "All fields are required", 400)
  }
 
- if(pin.length < 4){
-  throw new Error("PIN must be at least 4 digits")
+ if(!/^\d{4,}$/.test(pin)){
+  throw new AppError("BAD_REQUEST", "PIN must be at least 4 digits", 400)
  }
 
- let resolvedPhone:string | null = null
+ let resolvedPhone: string | null = null
 
- // 🔐 TOKEN FLOW (WEB)
  if(token){
   resolvedPhone = verifyToken(token)
-
   if(!resolvedPhone){
-   throw new Error("Invalid or expired token")
+   throw new AppError("UNAUTHORIZED", "Invalid or expired token", 401)
   }
- }
-
- // 📱 DIRECT FLOW (WHATSAPP)
- else if(phone){
+ } else if(phone){
   resolvedPhone = phone
- }
-
- else{
-  throw new Error("Token or phone is required")
+ } else {
+  throw new AppError("BAD_REQUEST", "Token or phone is required", 400)
  }
 
  const client = await pool.connect()
 
  try{
-
   await client.query("BEGIN")
 
-  // ❗ CHECK IF USER EXISTS
   const existing = await client.query(
    `SELECT id FROM users WHERE phone=$1`,
    [resolvedPhone]
   )
 
   if(existing.rows.length){
-   throw new Error("User already exists")
+   // Don't reveal whether the phone was already registered
+   throw new AppError("REGISTRATION_FAILED", "Registration could not be completed", 409)
   }
 
-  // 🔐 HASH PIN
   const pinHash = await bcrypt.hash(pin, 10)
-
   const userId = uuid()
 
-  // 👤 CREATE USER
   await client.query(
    `
-   INSERT INTO users(
-    id,
-    phone,
-    first_name,
-    last_name,
-    address,
-    pin_hash
-   )
+   INSERT INTO users(id, phone, first_name, last_name, address, pin_hash)
    VALUES($1,$2,$3,$4,$5,$6)
    `,
-   [
-    userId,
-    resolvedPhone,
-    firstName,
-    lastName,
-    address,
-    pinHash
-   ]
+   [userId, resolvedPhone, firstName, lastName, address, pinHash]
   )
 
-  // 🔁 GENERATE UNIQUE ACCOUNT NUMBER
-  let accountNumber = generateAccountNumber()
-
-  let existsAccount = await client.query(
-   `SELECT id FROM accounts WHERE account_number=$1`,
-   [accountNumber]
-  )
-
-  while(existsAccount.rows.length){
-   accountNumber = generateAccountNumber()
-
-   existsAccount = await client.query(
-    `SELECT id FROM accounts WHERE account_number=$1`,
-    [accountNumber]
-   )
-  }
-
+  // Relies on a UNIQUE constraint on accounts.account_number.
+  // Retry on conflict instead of pre-checking (avoids a race).
+  let accountNumber: string | null = null
   const accountId = uuid()
 
-  // 🏦 CREATE ACCOUNT
-  await client.query(
-   `
-   INSERT INTO accounts(
-    id,
-    user_id,
-    account_number,
-    balance,
-    account_type,
-    bank_code
-   )
-   VALUES($1,$2,$3,$4,$5,$6)
-   `,
-   [
-    accountId,
-    userId,
-    accountNumber,
-    DEFAULT_BALANCE,
-    "savings",
-    BANK_CODE
-   ]
-  )
+  for(let attempt = 0; attempt < MAX_ACCOUNT_NUM_RETRIES; attempt++){
+   const candidate = generateAccountNumber()
+   try{
+    await client.query(
+     `
+     INSERT INTO accounts(id, user_id, account_number, balance, account_type, bank_code)
+     VALUES($1,$2,$3,$4,$5,$6)
+     `,
+     [accountId, userId, candidate, DEFAULT_BALANCE, "savings", BANK_CODE]
+    )
+    accountNumber = candidate
+    break
+   }catch(e: unknown){
+    const err = e as { code?: string }
+    if(err.code !== "23505") throw e // not a unique-violation
+   }
+  }
+
+  if(!accountNumber){
+   throw new AppError("CONFLICT", "Could not allocate account number", 503)
+  }
 
   await client.query("COMMIT")
 
@@ -164,15 +111,10 @@ export async function registerUser(
     balance: DEFAULT_BALANCE
    }
   }
-
- }catch(err:any){
-
+ }catch(err){
   await client.query("ROLLBACK")
-  throw new Error(err.message)
-
+  throw err
  }finally{
-
   client.release()
-
  }
 }

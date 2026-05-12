@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Confirm Transfer</title>
+<style>
+ body { font-family: system-ui, sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; }
+ h2 { margin-bottom: 1rem; }
+ .row { margin: 8px 0; }
+ .row b { display: inline-block; min-width: 110px; }
+ input { padding: 8px; font-size: 16px; width: 100%; box-sizing: border-box; margin: 8px 0; }
+ button { padding: 10px 16px; font-size: 16px; cursor: pointer; }
+ #msg { margin-top: 12px; }
+ .err { color: #c00; }
+ .ok { color: #16a34a; }
+</style>
+</head>
+<body data-token="">
+ <h2>Confirm Transfer</h2>
+
+ <div class="row"><b>From:</b> <span id="fromAccount"></span></div>
+ <div class="row"><b>To:</b> <span id="toAccount"></span></div>
+ <div class="row"><b>Amount:</b> <span id="amount"></span></div>
+
+ <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter PIN" />
+ <button id="submitBtn">Confirm</button>
+
+ <p id="msg"></p>
+
+ <script>
+  (function(){
+   var body = document.body
+   var token = body.dataset.token
+   var apiBase = body.dataset.apiBase || ""
+
+   var payload = null
+   try{
+    var parts = token.split(".")
+    if(parts.length === 3){
+     payload = JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")))
+    }
+   }catch(e){ /* leave null */ }
+
+   if(!payload){
+    document.getElementById("msg").className = "err"
+    document.getElementById("msg").textContent = "Invalid or expired link"
+    document.getElementById("submitBtn").disabled = true
+    return
+   }
+
+   document.getElementById("fromAccount").textContent = payload.fromAccount || ""
+   document.getElementById("toAccount").textContent = payload.toAccount || ""
+   document.getElementById("amount").textContent = Number(payload.amount).toLocaleString()
+
+   document.getElementById("submitBtn").addEventListener("click", async function(){
+    var pin = document.getElementById("pin").value
+    var msg = document.getElementById("msg")
+    msg.className = ""
+    msg.textContent = "Submitting..."
+
+    try{
+     var res = await fetch(apiBase + "/api/whatsapp?action=transfer", {
+      method: "POST",
+      headers: {
+       "Content-Type": "application/json",
+       "idempotency-key": "wt-" + Date.now() + "-" + Math.random().toString(36).slice(2)
+      },
+      body: JSON.stringify({
+       token: token,
+       pin: pin
+      })
+     })
+
+     var data = await res.json()
+
+     if(res.ok && data.success){
+      msg.className = "ok"
+      msg.textContent = "Transfer successful"
+     }else{
+      msg.className = "err"
+      msg.textContent = (data && data.error && data.error.message) || "Transfer failed"
+     }
+    }catch(e){
+     msg.className = "err"
+     msg.textContent = "Network error"
+    }
+   })
+  })()
+ </script>
+</body>
+</html>

@@ -1,96 +1,78 @@
 import { pool } from "../db"
 import bcrypt from "bcryptjs"
+import { AppError } from "../utils/errors"
 
-export async function validatePin(
- phone: string,
- pin: string
-){
+export async function validatePin(phone: string, pin: string){
 
  if(!phone || !pin){
-  throw new Error("Phone and PIN required")
+  throw new AppError("BAD_REQUEST", "Phone and PIN required", 400)
  }
 
  const userRes = await pool.query(
- `
- SELECT id, pin_hash, pin_attempts, pin_locked_until
- FROM users
- WHERE phone=$1
- `,
- [phone]
+  `
+  SELECT id, pin_hash, pin_attempts, pin_locked_until
+  FROM users
+  WHERE phone=$1
+  `,
+  [phone]
  )
 
  if(!userRes.rows.length){
-  throw new Error("User not found")
+  throw new AppError("UNAUTHORIZED", "Invalid credentials", 401)
  }
 
  const user = userRes.rows[0]
 
  if(!user.pin_hash){
-  throw new Error("PIN not set")
+  throw new AppError("PIN_NOT_SET", "PIN not set", 400)
  }
 
- // 🔒 CHECK IF ACCOUNT IS LOCKED
  if(
   user.pin_locked_until &&
   new Date(user.pin_locked_until) > new Date()
  ){
-  throw new Error("Account locked. Try again later")
+  throw new AppError("ACCOUNT_LOCKED", "Account locked. Try again later", 423)
  }
 
  const isValid = await bcrypt.compare(pin, user.pin_hash)
 
- // ❌ INVALID PIN
  if(!isValid){
-
   const attempts = (user.pin_attempts || 0) + 1
 
-  // 🚨 LOCK AFTER 3 ATTEMPTS
   if(attempts >= 3){
-
    await pool.query(
-   `
-   UPDATE users
-   SET pin_attempts=0,
-       pin_locked_until=NOW() + INTERVAL '15 minutes'
-   WHERE id=$1
-   `,
-   [user.id]
+    `
+    UPDATE users
+    SET pin_attempts=0,
+        pin_locked_until=NOW() + INTERVAL '15 minutes'
+    WHERE id=$1
+    `,
+    [user.id]
    )
-
-   throw new Error(
-    "Account locked due to multiple failed attempts"
+   throw new AppError(
+    "ACCOUNT_LOCKED",
+    "Account locked due to multiple failed attempts",
+    423
    )
-
   }
 
-  // 🔁 INCREMENT ATTEMPTS
   await pool.query(
-   `
-   UPDATE users
-   SET pin_attempts=$1
-   WHERE id=$2
-   `,
+   `UPDATE users SET pin_attempts=$1 WHERE id=$2`,
    [attempts, user.id]
   )
 
-  throw new Error("Invalid PIN")
-
+  throw new AppError("INVALID_PIN", "Invalid PIN", 401)
  }
 
- // ✅ SUCCESS → RESET ATTEMPTS
  await pool.query(
- `
- UPDATE users
- SET pin_attempts=0,
-     pin_locked_until=NULL
- WHERE id=$1
- `,
- [user.id]
+  `
+  UPDATE users
+  SET pin_attempts=0,
+      pin_locked_until=NULL
+  WHERE id=$1
+  `,
+  [user.id]
  )
 
- return {
-  valid: true,
-  userId: user.id
- }
-
+ return { userId: user.id as string }
 }

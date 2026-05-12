@@ -1,8 +1,11 @@
+import type { VercelResponse } from "@vercel/node"
+import { AppError } from "./errors"
+
 export function sendSuccess(
- res: any,
+ res: VercelResponse,
  requestId: string,
- data: any = null,
- meta: any = null,
+ data: unknown = null,
+ meta: unknown = null,
  statusCode: number = 200
 ){
  return res.status(statusCode).json({
@@ -14,17 +17,28 @@ export function sendSuccess(
 }
 
 export function sendError(
- res: any,
+ res: VercelResponse,
  requestId: string,
- error: any,
- statusCode: number = 500
+ error: unknown,
+ statusCode?: number
 ){
- return res.status(statusCode).json({
+ let code = "INTERNAL_ERROR"
+ let message = "Something went wrong"
+ let status = statusCode ?? 500
+
+ if(error instanceof AppError){
+  code = error.code
+  message = error.message
+  status = statusCode ?? error.statusCode
+ } else if(error && typeof error === "object"){
+  const e = error as { code?: string; message?: string }
+  if(e.code) code = e.code
+  if(e.message) message = e.message
+ }
+
+ return res.status(status).json({
   success: false,
   requestId,
-  error: {
-   code: error?.code || "INTERNAL_ERROR",
-   message: error?.message || "Something went wrong"
-  }
+  error: { code, message }
  })
 }
