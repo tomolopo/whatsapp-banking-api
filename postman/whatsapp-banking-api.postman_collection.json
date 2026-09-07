@@ -1,0 +1,1331 @@
+{
+  "info": {
+    "_postman_id": "9f2f7f7d-4f73-4f5f-b6e5-7f0d0f4f2f6a",
+    "name": "WhatsApp Banking API",
+    "description": "Postman collection for the WhatsApp Banking API. Includes the main action router, admin endpoints, webhook receiver, token/link generators, and HTML pages.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://whatsapp-banking-api.vercel.app"
+    },
+    {
+      "key": "phone",
+      "value": "2348012345678"
+    },
+    {
+      "key": "firstName",
+      "value": "John"
+    },
+    {
+      "key": "lastName",
+      "value": "Doe"
+    },
+    {
+      "key": "address",
+      "value": "Lagos"
+    },
+    {
+      "key": "pin",
+      "value": "1234"
+    },
+    {
+      "key": "otp",
+      "value": "123456"
+    },
+    {
+      "key": "accountNumber",
+      "value": "0123456789"
+    },
+    {
+      "key": "fromAccount",
+      "value": "0123456789"
+    },
+    {
+      "key": "toAccount",
+      "value": "0987654321"
+    },
+    {
+      "key": "amount",
+      "value": "5000"
+    },
+    {
+      "key": "transactionId",
+      "value": "uuid"
+    },
+    {
+      "key": "token",
+      "value": "signed-token"
+    },
+    {
+      "key": "transferToken",
+      "value": "signed-transfer-token"
+    },
+    {
+      "key": "adminToken",
+      "value": "admin-jwt"
+    },
+    {
+      "key": "webhookUser",
+      "value": "webhook-user"
+    },
+    {
+      "key": "webhookPass",
+      "value": "webhook-pass"
+    },
+    {
+      "key": "webhookAuth",
+      "value": "d2ViaG9vay11c2VyOndlYmhvb2stcGFzcw=="
+    }
+  ],
+  "item": [
+    {
+      "name": "WhatsApp Router",
+      "item": [
+        {
+          "name": "initSession",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=initSession",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "initSession"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "description": "Initializes the session for a phone number."
+          }
+        },
+        {
+          "name": "checkUser",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=checkUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "checkUser"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "description": "Checks whether a user exists."
+          }
+        },
+        {
+          "name": "register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "register"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{token}}\",\n  \"phone\": \"{{phone}}\",\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\",\n  \"address\": \"{{address}}\",\n  \"pin\": \"{{pin}}\"\n}"
+            },
+            "description": "Registers a user and creates the first account."
+          }
+        },
+        {
+          "name": "createAccount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=createAccount",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "createAccount"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "description": "Creates an additional account for the user."
+          }
+        },
+        {
+          "name": "balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=balance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "balance"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"accountNumber\": \"{{accountNumber}}\"\n}"
+            },
+            "description": "Returns an account balance."
+          }
+        },
+        {
+          "name": "resolveAccount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=resolveAccount",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "resolveAccount"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{toAccount}}\"\n}"
+            },
+            "description": "Resolves a destination account name and bank."
+          }
+        },
+        {
+          "name": "confirmTransferDetails",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=confirmTransferDetails",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "confirmTransferDetails"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{toAccount}}\",\n  \"amount\": {{amount}}\n}"
+            },
+            "description": "Returns a transfer confirmation message."
+          }
+        },
+        {
+          "name": "transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{transferToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=transfer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "transfer"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"fromAccount\": \"{{fromAccount}}\",\n  \"toAccount\": \"{{toAccount}}\",\n  \"amount\": {{amount}},\n  \"pin\": \"{{pin}}\"\n}"
+            },
+            "description": "Transfers funds between accounts."
+          }
+        },
+        {
+          "name": "transactions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "transactions"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{accountNumber}}\"\n}"
+            },
+            "description": "Gets transaction history. The implementation currently appears to expect an account number internally."
+          },
+          "description": "Gets transaction history for an account number."
+        },
+        {
+          "name": "addBeneficiary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=addBeneficiary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "addBeneficiary"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"accountNumber\": \"{{toAccount}}\",\n  \"bankCode\": \"044\",\n  \"name\": \"Jane Doe\",\n  \"nickname\": \"Jane\"\n}"
+            },
+            "description": "Adds a beneficiary."
+          }
+        },
+        {
+          "name": "favoriteBeneficiary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=favoriteBeneficiary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "favoriteBeneficiary"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"accountNumber\": \"{{toAccount}}\"\n}"
+            },
+            "description": "Marks a beneficiary as favorite."
+          }
+        },
+        {
+          "name": "getBeneficiaries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=getBeneficiaries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getBeneficiaries"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "description": "Lists beneficiaries."
+          }
+        },
+        {
+          "name": "getAccounts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=getAccounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "getAccounts"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "description": "Lists accounts for a user."
+          }
+        },
+        {
+          "name": "changePin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=changePin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "changePin"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"oldPin\": \"{{pin}}\",\n  \"newPin\": \"5678\"\n}"
+            },
+            "description": "Changes the user's PIN."
+          }
+        },
+        {
+          "name": "statement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=statement",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "statement"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"accountNumber\": \"{{accountNumber}}\",\n  \"fromDate\": \"2026-09-01\",\n  \"toDate\": \"2026-09-07\"\n}"
+            },
+            "description": "Generates an account statement PDF."
+          }
+        },
+        {
+          "name": "receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=receipt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "receipt"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"transactionId\": \"{{transactionId}}\"\n}"
+            },
+            "description": "Generates a receipt PDF for a transaction."
+          }
+        },
+        {
+          "name": "airtime",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "airtime-{{transactionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=airtime",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "airtime"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"fromAccount\": \"{{fromAccount}}\",\n  \"pin\": \"{{pin}}\",\n  \"amount\": 500,\n  \"network\": \"MTN\"\n}"
+            },
+            "description": "Purchases airtime."
+          }
+        },
+        {
+          "name": "data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "data-{{transactionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "data"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"fromAccount\": \"{{fromAccount}}\",\n  \"pin\": \"{{pin}}\",\n  \"amount\": 1000,\n  \"network\": \"MTN\",\n  \"plan\": \"2GB\",\n  \"duration\": \"30d\"\n}"
+            },
+            "description": "Purchases data."
+          }
+        },
+        {
+          "name": "resetPin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp?action=resetPin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "resetPin"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"{{otp}}\",\n  \"newPin\": \"5678\"\n}"
+            },
+            "description": "Resets the user's PIN using OTP verification."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin?resource=customers&search=john&limit=10&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "customers"
+                },
+                {
+                  "key": "search",
+                  "value": "john"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Lists customers."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"customers\": [\n    {\n      \"id\": \"usr_001\",\n      \"first_name\": \"John\",\n      \"last_name\": \"Doe\",\n      \"phone\": \"2348012345678\",\n      \"address\": \"Lagos\",\n      \"created_at\": \"2026-09-07T12:00:00.000Z\",\n      \"account_number\": \"0123456789\",\n      \"balance\": 1000000,\n      \"transaction_count\": \"3\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin?resource=accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "accounts"
+                }
+              ]
+            },
+            "description": "Lists accounts."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accounts\": [\n    {\n      \"id\": \"acc_001\",\n      \"account_number\": \"0123456789\",\n      \"balance\": 1000000,\n      \"first_name\": \"John\",\n      \"last_name\": \"Doe\",\n      \"phone\": \"2348012345678\",\n      \"created_at\": \"2026-09-07T12:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "banks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin?resource=banks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "banks"
+                }
+              ]
+            },
+            "description": "Lists banks."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"banks\": [\n    {\n      \"code\": \"999\",\n      \"name\": \"Bank-IB\"\n    },\n    {\n      \"code\": \"044\",\n      \"name\": \"Access Bank\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "fraud",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin?resource=fraud",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "fraud"
+                }
+              ]
+            },
+            "description": "Lists fraud alerts."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"fraud\": [\n    {\n      \"id\": \"fraud_001\",\n      \"account_id\": \"acc_001\",\n      \"reason\": \"High-risk transfer pattern\",\n      \"severity\": \"high\",\n      \"created_at\": \"2026-09-07T12:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin?resource=transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin"
+              ],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "transactions"
+                }
+              ]
+            },
+            "description": "Lists transactions."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"transactions\": [\n    {\n      \"id\": \"tx_001\",\n      \"amount\": 5000,\n      \"status\": \"completed\",\n      \"created_at\": \"2026-09-07T12:00:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Webhook",
+      "item": [
+        {
+          "name": "infobip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic {{webhookAuth}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhook?action=infobip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhook"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "infobip"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"any\": \"raw Infobip payload\"\n}"
+            },
+            "description": "Receives a raw Infobip webhook payload."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic {{webhookAuth}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhook?action=events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhook"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "events"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"some.event.type\",\n  \"data\": {\n    \"foo\": \"bar\"\n  }\n}"
+            },
+            "description": "Logs a named event payload."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "dispatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic {{webhookAuth}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhook?action=dispatch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhook"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "dispatch"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"something-happened\",\n  \"data\": {\n    \"foo\": \"bar\"\n  }\n}"
+            },
+            "description": "Logs a dispatch event payload."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Link Generators",
+      "item": [
+        {
+          "name": "generate-link",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/generate-link?phone={{phone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "generate-link"
+              ],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "{{phone}}"
+                }
+              ]
+            },
+            "description": "Generates a registration link."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_link_001\",\n  \"data\": {\n    \"phone\": \"2348012345678\",\n    \"token\": \"signed-token\",\n    \"registrationLink\": \"https://whatsapp-banking-api.vercel.app/api/register-page?token=signed-token\",\n    \"expiresIn\": \"10 minutes\"\n  },\n  \"meta\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "generate-transfer-link",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/generate-transfer-link?phone={{phone}}&fromAccount={{fromAccount}}&toAccount={{toAccount}}&amount={{amount}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "generate-transfer-link"
+              ],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "{{phone}}"
+                },
+                {
+                  "key": "fromAccount",
+                  "value": "{{fromAccount}}"
+                },
+                {
+                  "key": "toAccount",
+                  "value": "{{toAccount}}"
+                },
+                {
+                  "key": "amount",
+                  "value": "{{amount}}"
+                }
+              ]
+            },
+            "description": "Generates a signed transfer link."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_xfer_link_001\",\n  \"data\": {\n    \"transferLink\": \"https://whatsapp-banking-api.vercel.app/api/transfer-page?token=signed-transfer-token\",\n    \"expiresIn\": \"10 minutes\"\n  },\n  \"meta\": null\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pages",
+      "item": [
+        {
+          "name": "register-page",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/register-page?token={{token}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "register-page"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{token}}"
+                }
+              ]
+            },
+            "description": "Returns the registration HTML page."
+          },
+          "response": [
+            {
+              "name": "HTML",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!doctype html>\n<html>\n  <body>Registration page</body>\n</html>"
+            }
+          ]
+        },
+        {
+          "name": "transfer-page",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/transfer-page?token={{transferToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfer-page"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{transferToken}}"
+                }
+              ]
+            },
+            "description": "Returns the transfer confirmation HTML page."
+          },
+          "response": [
+            {
+              "name": "HTML",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!doctype html>\n<html>\n  <body>Transfer confirmation page</body>\n</html>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "swagger-json",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/docs?format=json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docs"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": "Returns the Swagger/OpenAPI JSON."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"WhatsApp Banking API\",\n    \"version\": \"1.0.0\"\n  },\n  \"paths\": {}\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

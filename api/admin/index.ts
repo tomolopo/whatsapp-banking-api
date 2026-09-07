@@ -26,6 +26,12 @@ export default async function handler(
   if(!resource){
    throw new AppError("BAD_REQUEST", "resource parameter required", 400)
   }
+  if(!Number.isInteger(limit) || limit <= 0 || limit > 100){
+   throw new AppError("BAD_REQUEST", "limit must be an integer between 1 and 100", 400)
+  }
+  if(!Number.isInteger(offset) || offset < 0){
+   throw new AppError("BAD_REQUEST", "offset must be a non-negative integer", 400)
+  }
 
   if(resource === "customers"){
    return res.json({ customers: await getCustomers(search, limit, offset) })

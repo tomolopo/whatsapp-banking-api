@@ -1,6 +1,11 @@
 import { pool } from "../db"
+import { AppError } from "../utils/errors"
 
 export async function getTransactionHistory(accountNumber: string){
+
+ if(!accountNumber){
+  throw new AppError("BAD_REQUEST", "accountNumber is required", 400)
+ }
 
  // get account id
  const acc = await pool.query(
@@ -13,7 +18,7 @@ export async function getTransactionHistory(accountNumber: string){
  )
 
  if(!acc.rows.length){
-  throw new Error("Account not found")
+  throw new AppError("NOT_FOUND", "Account not found", 404)
  }
 
  const accountId = acc.rows[0].id

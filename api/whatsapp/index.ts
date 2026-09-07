@@ -19,7 +19,7 @@ import { logRequest, logResponse } from "../../lib/logger"
 import { changePin } from "../../lib/auth/changePin"
 import { verifyOTP } from "../../lib/otp"
 import { validatePin } from "../../lib/auth/validatePin"
-import { checkIdempotency, saveIdempotency } from "../../lib/idempotency"
+import { claimIdempotency, saveIdempotency, clearIdempotency } from "../../lib/idempotency"
 import { runFraudChecks } from "../../lib/fraud"
 
 import { purchaseAirtime } from "../../lib/services/airtime"
@@ -178,7 +178,12 @@ export default async function handler(
    )
 
   } else if(action === "transactions"){
-   response = await getTransactionHistory(body.phone as string)
+   const accountNumber = body.accountNumber as string | undefined
+   if(!accountNumber){
+    throw new AppError("BAD_REQUEST", "accountNumber required", 400)
+   }
+
+   response = await getTransactionHistory(accountNumber)
 
   } else if(action === "addBeneficiary"){
    response = await addBeneficiary(
@@ -247,6 +252,11 @@ export default async function handler(
  }
 }
 
+function isValidDateString(value: string){
+ const parsed = new Date(value)
+ return !Number.isNaN(parsed.getTime())
+}
+
 async function handleStatement(body: Record<string, unknown>){
  const accountNumber = body.accountNumber as string
  const fromDate = body.fromDate as string
@@ -255,6 +265,12 @@ async function handleStatement(body: Record<string, unknown>){
 
  if(!accountNumber || !fromDate || !toDate || !phone){
   throw new AppError("BAD_REQUEST", "phone, accountNumber, fromDate and toDate are required", 400)
+ }
+ if(!isValidDateString(fromDate) || !isValidDateString(toDate)){
+  throw new AppError("BAD_REQUEST", "fromDate and toDate must be valid dates", 400)
+ }
+ if(new Date(fromDate) > new Date(toDate)){
+  throw new AppError("BAD_REQUEST", "fromDate must be before toDate", 400)
  }
 
  // Ownership check
@@ -370,8 +386,8 @@ async function purchaseService(
  }
 
  const key = idempotencyKey || uuid()
- const cached = await checkIdempotency(key)
- if(cached) return cached
+ const idempotency = await claimIdempotency(key)
+ if(!idempotency.claimed) return idempotency.cached
 
  await validatePin(phone, pin)
 
@@ -410,6 +426,7 @@ async function purchaseService(
 
  }catch(err){
   await client.query("ROLLBACK")
+  await clearIdempotency(key).catch(() => undefined)
   throw err
  }finally{
   client.release()
@@ -417,21 +434,34 @@ async function purchaseService(
 }
 
 async function handleAirtime(body: Record<string, unknown>, idempotencyKey: string | undefined){
+ const network = body.network as string | undefined
+ if(!network){
+  throw new AppError("BAD_REQUEST", "network is required", 400)
+ }
+
  return purchaseService(body, idempotencyKey, (client, accountId, amount) =>
-  purchaseAirtime(client, accountId, amount, body.phone as string, body.network as string)
+  purchaseAirtime(client, accountId, amount, body.phone as string, network)
  )
 }
 
 async function handleData(body: Record<string, unknown>, idempotencyKey: string | undefined){
+ const network = body.network as string | undefined
+ const plan = body.plan as string | undefined
+ const duration = body.duration as string | undefined
+
+ if(!network || !plan || !duration){
+  throw new AppError("BAD_REQUEST", "network, plan and duration are required", 400)
+ }
+
  return purchaseService(body, idempotencyKey, (client, accountId, amount) =>
   purchaseData(
    client,
    accountId,
    amount,
    body.phone as string,
-   body.network as string,
-   body.plan as string,
-   body.duration as string
+   network,
+   plan,
+   duration
   )
  )
 }

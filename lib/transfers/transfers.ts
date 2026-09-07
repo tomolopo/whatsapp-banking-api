@@ -3,7 +3,7 @@ import { internalTransfer } from "./internal"
 import { interbankTransfer } from "./interbank"
 import { resolveAccount } from "./resolveAccount"
 import { validatePin } from "../auth/validatePin"
-import { checkIdempotency, saveIdempotency } from "../idempotency"
+import { claimIdempotency, saveIdempotency, clearIdempotency } from "../idempotency"
 import { runFraudChecks } from "../fraud"
 import { createLedgerEntry } from "../ledger/ledger"
 import { AppError } from "../utils/errors"
@@ -25,9 +25,6 @@ export async function executeTransfer(
   throw new AppError("BAD_REQUEST", "Invalid amount", 400)
  }
 
- const cached = await checkIdempotency(idempotencyKey)
- if(cached) return cached
-
  const resolved = await resolveAccount(toAccountNumber)
  const destinationBank = bankCodeOverride || resolved.bankCode
 
@@ -41,6 +38,9 @@ export async function executeTransfer(
    idempotencyKey
   )
  }
+
+ const idempotency = await claimIdempotency(idempotencyKey)
+ if(!idempotency.claimed) return idempotency.cached
 
  // Interbank path
  await validatePin(phone, pin)
@@ -113,6 +113,7 @@ export async function executeTransfer(
 
  }catch(err){
   await client.query("ROLLBACK")
+  await clearIdempotency(idempotencyKey).catch(() => undefined)
   throw err
  }finally{
   client.release()

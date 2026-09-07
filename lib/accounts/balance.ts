@@ -1,4 +1,5 @@
 import { pool } from "../db"
+import { AppError } from "../utils/errors"
 
 export async function getBalance(
  phone: string,
@@ -6,11 +7,11 @@ export async function getBalance(
 ){
 
  if(!phone){
-  throw new Error("Phone is required")
+  throw new AppError("BAD_REQUEST", "Phone is required", 400)
  }
 
  if(!accountNumber){
-  throw new Error("Account number is required")
+  throw new AppError("BAD_REQUEST", "Account number is required", 400)
  }
 
  // 🔍 GET USER
@@ -20,7 +21,7 @@ export async function getBalance(
  )
 
  if(!userRes.rows.length){
-  throw new Error("User not found")
+  throw new AppError("NOT_FOUND", "User not found", 404)
  }
 
  const userId = userRes.rows[0].id
@@ -37,7 +38,7 @@ export async function getBalance(
  )
 
  if(!accRes.rows.length){
-  throw new Error("Account not found for this user")
+  throw new AppError("FORBIDDEN", "Account not found for this user", 403)
  }
 
  const account = accRes.rows[0]

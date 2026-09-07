@@ -96,8 +96,16 @@ export async function generateReceiptPDF(transaction: any){
   doc.moveDown()
  }
 
- row("From Account:", transaction.from_account)
- row("To Account:", transaction.to_account)
+ const txType = String(transaction.type || "transfer")
+
+ if(txType === "transfer"){
+  row("From Account:", String(transaction.from_account || "N/A"))
+  row("To Account:", String(transaction.to_account || "N/A"))
+ } else {
+  row("Transaction Type:", txType)
+  row("Reference:", String(transaction.reference || transaction.id))
+ }
+
  row("Date:", formatDate(transaction.created_at))
  row("Time:", formatTime(transaction.created_at))
  row("Transaction ID:", transaction.id)

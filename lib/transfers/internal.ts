@@ -2,7 +2,7 @@ import { pool } from "../db"
 import { v4 as uuid } from "uuid"
 
 import { createLedgerEntry } from "../ledger/ledger"
-import { checkIdempotency, saveIdempotency } from "../idempotency"
+import { claimIdempotency, saveIdempotency, clearIdempotency } from "../idempotency"
 import { runFraudChecks } from "../fraud"
 import { validatePin } from "../auth/validatePin"
 import { AppError } from "../utils/errors"
@@ -28,11 +28,13 @@ export async function internalTransfer(
   throw new AppError("BAD_REQUEST", "Invalid amount", 400)
  }
 
- const existing = await checkIdempotency(idempotencyKey)
- if(existing) return existing
-
  // PIN check first — owner verification happens via the join below
  await validatePin(phone, pin)
+
+ const idempotency = await claimIdempotency(idempotencyKey)
+ if(!idempotency.claimed){
+  return idempotency.cached
+ }
 
  const client = await pool.connect()
 
@@ -114,6 +116,7 @@ export async function internalTransfer(
     id: txId,
     amount,
     status: "completed",
+    type: "transfer",
     from_account: fromAccountNumber,
     to_account: toAccountNumber,
     created_at: new Date().toISOString()
@@ -146,6 +149,7 @@ export async function internalTransfer(
 
  }catch(err){
   await client.query("ROLLBACK")
+  await clearIdempotency(idempotencyKey).catch(() => undefined)
   throw err
  }finally{
   client.release()
