@@ -72,8 +72,9 @@ Supported actions in the live router:
 
 Success responses usually return the shared envelope with a `data` object. Representative payloads include:
 
+- `initSession` → session summary with `balance` equal to the total across all accounts
 - `register` → account and profile details
-- `balance` → `accountNumber`, `accountType`, `balance`
+- `balance` → `accountNumber`, `accountType`, `balance` for the selected account only
 - `resolveAccount` → destination account metadata
 - `confirmTransferDetails` → confirmation text plus the transfer preview
 - `transfer` → `transactionId`, `receiptUrl`, `receiptStatus`, `fraudScore`
@@ -159,6 +160,8 @@ See [api/docs/index.ts](../api/docs/index.ts).
 ## Notes
 
 - The WhatsApp router is action-based, not REST-resource-based.
+- `initSession.balance` is the summed balance across all of the user’s accounts.
+- `/api/whatsapp?action=balance` remains account-specific and only returns one account’s balance.
 - Validation errors are returned as structured `AppError` responses.
 - Several actions depend on ownership checks against the `users` and `accounts` tables.
 - Generated PDFs and transfer receipts are returned as URLs after upload.

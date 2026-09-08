@@ -16,7 +16,7 @@ const openapi = {
   "/api/whatsapp": {
    post: {
     summary: "WhatsApp Banking Router",
-    description: "Action-based router used by the WhatsApp banking flow.",
+    description: "Action-based router used by the WhatsApp banking flow. initSession returns the total balance across all user accounts.",
     parameters: [
      {
       name: "action",

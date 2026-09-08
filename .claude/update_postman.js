@@ -19,11 +19,23 @@ const examples = {
       header: [{ key: 'Content-Type', value: 'application/json' }],
       body: successEnvelope('req_init_001', {
         userExists: true,
-        user: { id: 'usr_001', firstName: 'John', lastName: 'Doe', address: 'Lagos', email: 'john@example.com' },
+        user: { id: 'usr_001', firstName: 'Taiwo', lastName: 'Omolopo', address: '15 Admiralty Way Lagos', email: null },
         hasAccount: true,
-        accounts: [{ accountNumber: '0123456789', balance: 1000000 }],
-        balance: 1000000,
-        lastTransactions: [{ id: 'tx_001', amount: 5000, type: 'transfer', status: 'completed', created_at: '2026-09-07T12:00:00.000Z' }]
+        accounts: [
+          { accountNumber: '1345537268', balance: '9788700' },
+          { accountNumber: '6897988792', balance: '99000' },
+          { accountNumber: '8935655581', balance: '10000' },
+          { accountNumber: '7562637469', balance: '996000' },
+          { accountNumber: '4539256601', balance: '63000' }
+        ],
+        balance: '10956700',
+        lastTransactions: [
+          { id: '4808843a-64e0-4904-bcf7-76677d544a65', amount: '5000', type: 'transfer', status: 'completed', created_at: '2026-04-17T12:02:31.250Z' },
+          { id: 'abdd6e2d-90f4-4aee-ae09-b0ba93a7a109', amount: '6800', type: 'data', status: 'completed', created_at: '2026-04-16T20:46:17.249Z' },
+          { id: 'f0271f99-f685-4f20-9024-2c1b8ed84679', amount: '5000', type: 'transfer', status: 'completed', created_at: '2026-04-16T20:44:09.817Z' },
+          { id: '6056bb98-9104-496d-9af7-1b57ea49026a', amount: '1000', type: 'airtime', status: 'completed', created_at: '2026-04-01T10:43:20.602Z' },
+          { id: '2b6510f8-6443-4279-99b1-4eb48ea9fa9f', amount: '30000', type: 'transfer', status: 'completed', created_at: '2026-03-31T12:55:09.800Z' }
+        ]
       })
     },
     checkUser: {

@@ -70,6 +70,10 @@ export async function initSession(phone: string){
   }
 
   const primaryAccount = accounts[0]
+  const totalBalance = accounts.reduce(
+   (sum, acc) => sum + Number(acc.balance || 0),
+   0
+  )
 
   // 📜 GET LAST TRANSACTIONS (FIXED JOIN)
   const txResult = await pool.query(
@@ -109,7 +113,7 @@ export async function initSession(phone: string){
     balance: acc.balance
    })),
 
-   balance: primaryAccount.balance,
+   balance: String(totalBalance),
 
    lastTransactions: txResult.rows
 
