@@ -213,6 +213,32 @@ paths:
       responses:
         "200":
           description: HTML page
+  /api/qr-register-page:
+    get:
+      summary: QR registration page
+      responses:
+        "200":
+          description: HTML page
+  /api/qr-generate:
+    post:
+      summary: Generate QR registration
+      responses:
+        "200":
+          description: Successful response
+        "400":
+          description: Invalid request
+        "405":
+          description: Method not allowed
+        "500":
+          description: Server error
+  /api/qr-profile-page:
+    get:
+      summary: QR profile page
+      responses:
+        "200":
+          description: HTML page
+        "404":
+          description: Profile unavailable
   /api/docs:
     get:
       summary: Swagger UI and OpenAPI JSON

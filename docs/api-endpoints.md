@@ -137,6 +137,22 @@ Typical response fields include `phone`, `token`, `registrationLink`, and `expir
 Creates a signed transfer link. See [api/generate-transfer-link.ts](../api/generate-transfer-link.ts).
 Typical response fields include `transferLink` and `expiresIn`.
 
+## QR registration flow
+
+### `/api/qr-register-page`
+
+Serves the QR registration HTML form.
+
+### `/api/qr-generate`
+
+Accepts a completed QR registration, stores it in Supabase, and returns the generated QR payload.
+Typical response fields include `profileUrl`, `qrDataUrl`, and the stored registration metadata.
+
+### `/api/qr-profile-page`
+
+Looks up the QR token and renders the public profile page.
+The page displays First Name, Last Name, Job Title, MDA Sector, Registration Status, and Organization.
+
 ## Pages
 
 ### `/api/register-page`
@@ -165,3 +181,4 @@ See [api/docs/index.ts](../api/docs/index.ts).
 - Validation errors are returned as structured `AppError` responses.
 - Several actions depend on ownership checks against the `users` and `accounts` tables.
 - Generated PDFs and transfer receipts are returned as URLs after upload.
+- QR profile pages return a safe 404 response when the token is missing or unknown.

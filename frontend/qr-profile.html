@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width,initial-scale=1" />
+ <title>QR Profile</title>
+ <style>
+  body { font-family: system-ui, sans-serif; padding: 24px; max-width: 640px; margin: 0 auto; }
+  h1 { margin-bottom: 0.5rem; }
+  .card { margin-top: 20px; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; background: #fff; }
+  .row { display: grid; grid-template-columns: 180px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .row:last-child { border-bottom: 0; }
+  .label { color: #6b7280; font-size: 14px; }
+  .value { font-weight: 600; word-break: break-word; }
+  .status { display: inline-block; margin-top: 10px; padding: 6px 10px; border-radius: 999px; background: #f3f4f6; }
+ </style>
+</head>
+<body>
+ <h1>Registration Profile</h1>
+ <p>This profile was opened from a scanned QR code.</p>
+
+ <div class="card">
+  <div class="row"><div class="label">First Name</div><div class="value">{{FIRST_NAME}}</div></div>
+  <div class="row"><div class="label">Last Name</div><div class="value">{{LAST_NAME}}</div></div>
+  <div class="row"><div class="label">Job Title</div><div class="value">{{JOB_TITLE}}</div></div>
+  <div class="row"><div class="label">MDA Sector</div><div class="value">{{MDA_SECTOR}}</div></div>
+  <div class="row"><div class="label">Registration Status</div><div class="value"><span class="status">{{REGISTRATION_STATUS}}</span></div></div>
+  <div class="row"><div class="label">Organization</div><div class="value">{{ORGANIZATION}}</div></div>
+ </div>
+</body>
+</html>

@@ -11,6 +11,7 @@
     "jsonwebtoken": "^9.0.3",
     "pdfkit": "^0.14.0",
     "pg": "^8.11.0",
+    "qrcode": "^1.5.4",
     "swagger-ui-dist": "^5.32.0",
     "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",

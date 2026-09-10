@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "9f2f7f7d-4f73-4f5f-b6e5-7f0d0f4f2f6a",
     "name": "WhatsApp Banking API",
-    "description": "Postman collection for the WhatsApp Banking API. Includes the main action router, admin endpoints, webhook receiver, token/link generators, and HTML pages.",
+    "description": "Postman collection for the WhatsApp Banking API. Includes the main action router, admin endpoints, webhook receiver, token/link generators, QR registration flow, and HTML pages.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -77,6 +77,34 @@
     {
       "key": "webhookAuth",
       "value": "d2ViaG9vay11c2VyOndlYmhvb2stcGFzcw=="
+    },
+    {
+      "key": "qrFirstName",
+      "value": "Jane"
+    },
+    {
+      "key": "qrLastName",
+      "value": "Doe"
+    },
+    {
+      "key": "qrJobTitle",
+      "value": "Director"
+    },
+    {
+      "key": "qrMdaSector",
+      "value": "Public Service"
+    },
+    {
+      "key": "qrRegistrationStatus",
+      "value": "Approved"
+    },
+    {
+      "key": "qrOrganization",
+      "value": "Ministry of Example"
+    },
+    {
+      "key": "qrToken",
+      "value": "qr_token_example_001"
     }
   ],
   "item": [
@@ -1201,6 +1229,120 @@
                 }
               ],
               "body": "{\n  \"success\": true,\n  \"requestId\": \"req_xfer_link_001\",\n  \"data\": {\n    \"transferLink\": \"https://whatsapp-banking-api.vercel.app/api/transfer-page?token=signed-transfer-token\",\n    \"expiresIn\": \"10 minutes\"\n  },\n  \"meta\": null\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "QR Registration",
+      "item": [
+        {
+          "name": "qr-register-page",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/qr-register-page",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr-register-page"
+              ]
+            },
+            "description": "Returns the QR registration HTML page."
+          },
+          "response": [
+            {
+              "name": "HTML",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>QR registration form</body>\n</html>"
+            }
+          ]
+        },
+        {
+          "name": "qr-generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/qr-generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr-generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"{{qrFirstName}}\",\n  \"lastName\": \"{{qrLastName}}\",\n  \"jobTitle\": \"{{qrJobTitle}}\",\n  \"mdaSector\": \"{{qrMdaSector}}\",\n  \"registrationStatus\": \"{{qrRegistrationStatus}}\",\n  \"organization\": \"{{qrOrganization}}\"\n}"
+            },
+            "description": "Stores a QR registration and generates the QR payload."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"createdAt\": \"2026-09-07T12:00:00.000Z\",\n    \"updatedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"profileUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-profile-page?token=qr_token_example_001\",\n    \"qrDataUrl\": \"data:image/png;base64,generated-qr-data-url\"\n  },\n  \"meta\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "qr-profile-page",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/qr-profile-page?token={{qrToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr-profile-page"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{qrToken}}"
+                }
+              ]
+            },
+            "description": "Returns the public QR profile HTML page."
+          },
+          "response": [
+            {
+              "name": "HTML",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/html; charset=utf-8"
+                }
+              ],
+              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>Registration profile page</body>\n</html>"
             }
           ]
         }
