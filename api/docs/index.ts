@@ -187,14 +187,6 @@ const openapi = {
     }
    }
   },
-  "/api/qr-register-page": {
-   get: {
-    summary: "QR registration page",
-    responses: {
-     "200": { description: "HTML page" }
-    }
-   }
-  },
   "/api/qr-generate": {
    post: {
     summary: "Generate QR registration",

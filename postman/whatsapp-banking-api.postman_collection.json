@@ -1238,37 +1238,6 @@
       "name": "QR Registration",
       "item": [
         {
-          "name": "qr-register-page",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/qr-register-page",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "qr-register-page"
-              ]
-            },
-            "description": "Returns the QR registration HTML page."
-          },
-          "response": [
-            {
-              "name": "HTML",
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "text/html; charset=utf-8"
-                }
-              ],
-              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>QR registration form</body>\n</html>"
-            }
-          ]
-        },
-        {
           "name": "qr-generate",
           "request": {
             "method": "POST",

@@ -139,10 +139,6 @@ Typical response fields include `transferLink` and `expiresIn`.
 
 ## QR registration flow
 
-### `/api/qr-register-page`
-
-Serves the QR registration HTML form.
-
 ### `/api/qr-generate`
 
 Accepts a completed QR registration, stores it in Supabase, and returns the generated QR payload.

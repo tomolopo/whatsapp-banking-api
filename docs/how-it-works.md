@@ -19,7 +19,6 @@ This project is a WhatsApp-first banking demo built as a set of Vercel API route
 
 ### 3. QR registration flow
 
-- [api/qr-register-page.ts](../api/qr-register-page.ts) serves the QR registration form.
 - [api/qr-generate.ts](../api/qr-generate.ts) stores the submitted registration in Supabase and creates a unique QR code.
 - [lib/qr/registrations.ts](../lib/qr/registrations.ts) handles token generation, inserts, and QR profile lookups.
 - [api/qr-profile-page.ts](../api/qr-profile-page.ts) renders the public profile page when the QR is scanned.
