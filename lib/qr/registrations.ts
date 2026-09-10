@@ -43,6 +43,10 @@ export function buildQrProfileUrl(qrToken: string){
  return `${normalizeBaseUrl()}/api/qr-profile-page?token=${encodeURIComponent(qrToken)}`
 }
 
+export function buildQrCodeUrl(qrToken: string){
+ return `${normalizeBaseUrl()}/api/qr-code?token=${encodeURIComponent(qrToken)}`
+}
+
 function createQrToken(){
  return `qr_${randomUUID().replace(/-/g, "")}`
 }

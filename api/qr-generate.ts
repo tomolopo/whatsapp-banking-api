@@ -6,6 +6,7 @@ import { sendError } from "../lib/utils/response"
 import {
  createQrRegistration,
  buildQrProfileUrl,
+ buildQrCodeUrl,
  type QrRegistrationInput
 } from "../lib/qr/registrations"
 
@@ -43,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
 
   const record = await createQrRegistration(input)
   const profileUrl = buildQrProfileUrl(record.qrToken)
+  const qrCodeUrl = buildQrCodeUrl(record.qrToken)
   const qrDataUrl = await QRCode.toDataURL(profileUrl, {
    errorCorrectionLevel: "M",
    margin: 1,
@@ -55,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
    data: {
     ...record,
     profileUrl,
+    qrCodeUrl,
     qrDataUrl
    },
    meta: null

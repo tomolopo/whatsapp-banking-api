@@ -1310,6 +1310,43 @@
           ]
         },
         {
+          "name": "qr-code",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/qr-code?token={{qrToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr-code"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{qrToken}}"
+                }
+              ]
+            },
+            "description": "Returns the generated QR image as PNG."
+          },
+          "response": [
+            {
+              "name": "PNG",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "image/png"
+                }
+              ],
+              "body": "<binary PNG data>"
+            }
+          ]
+        },
+        {
           "name": "qr-profile-page",
           "request": {
             "method": "GET",
