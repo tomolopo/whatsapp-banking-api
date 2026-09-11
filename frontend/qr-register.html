@@ -14,7 +14,6 @@
    --line: #dbe5de;
    --accent: #166b57;
    --accent-2: #d9ff47;
-   --warning: #b45309;
    --error: #b91c1c;
    --shadow: 0 20px 60px rgba(10, 31, 25, 0.12);
   }
@@ -32,7 +31,7 @@
   }
 
   .wrap {
-   width: min(720px, calc(100% - 24px));
+   width: min(760px, calc(100% - 24px));
    margin: 0 auto;
    padding: 24px 0 40px;
   }
@@ -108,7 +107,7 @@
    font: inherit;
    color: var(--ink);
    background: #fbfdfc;
-   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   input:focus {
@@ -209,7 +208,7 @@
    }
 
    .wrap {
-    width: min(100% - 16px, 720px);
+    width: min(100% - 16px, 760px);
     padding-top: 12px;
    }
 
@@ -230,10 +229,27 @@
 
   <section class="form-card">
    <form id="form">
-    <label>
-     Phone Number
-     <input id="phoneNumber" type="tel" placeholder="2348012345678" required />
-    </label>
+    <div class="grid">
+     <label>
+      Phone Number
+      <input id="phoneNumber" type="tel" placeholder="2348012345678" required />
+     </label>
+     <label>
+      Attendee ID
+      <input id="attendeeId" placeholder="ATD-001" required />
+     </label>
+    </div>
+
+    <div class="grid">
+     <label>
+      Email
+      <input id="email" type="email" placeholder="jane@example.com" required />
+     </label>
+     <label>
+      Confirmation Status
+      <input id="confirmationStatus" placeholder="Confirmed" required />
+     </label>
+    </div>
 
     <div class="grid">
      <label>
@@ -328,10 +344,13 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
        phoneNumber: document.getElementById("phoneNumber").value,
+       attendeeId: document.getElementById("attendeeId").value,
+       email: document.getElementById("email").value,
        firstName: document.getElementById("firstName").value,
        lastName: document.getElementById("lastName").value,
        jobTitle: document.getElementById("jobTitle").value,
        mdaSector: document.getElementById("mdaSector").value,
+       confirmationStatus: document.getElementById("confirmationStatus").value,
        registrationStatus: document.getElementById("registrationStatus").value,
        organization: document.getElementById("organization").value
       })

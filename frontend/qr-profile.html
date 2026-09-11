@@ -89,11 +89,6 @@
    color: #0c352c;
   }
 
-  .chip.orange {
-   background: #ff9b43;
-   color: white;
-  }
-
   .chip.soft {
    background: rgba(255, 255, 255, 0.1);
    color: #effaf2;
@@ -136,12 +131,48 @@
    word-break: break-word;
   }
 
-  .note {
-   margin: 16px 0 0;
+  .actions {
+   margin-top: 18px;
+   display: grid;
+   gap: 10px;
+  }
+
+  button {
+   appearance: none;
+   border: 0;
+   border-radius: 999px;
+   padding: 14px 18px;
+   font: inherit;
+   font-weight: 800;
+   cursor: pointer;
+   background: linear-gradient(145deg, #1d7a63, #11453c);
+   color: white;
+   box-shadow: 0 12px 28px rgba(17, 69, 60, 0.2);
+   transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+
+  button:hover:not(:disabled) {
+   transform: translateY(-1px);
+  }
+
+  button:disabled {
+   cursor: not-allowed;
+   opacity: 0.55;
+   background: #c9d6d1;
+   color: #5f736d;
+   box-shadow: none;
+   transform: none;
+  }
+
+  #msg {
+   margin: 0;
    color: var(--muted);
    font-size: 0.92rem;
    line-height: 1.6;
   }
+
+  #msg.ok { color: #16794d; }
+  #msg.err { color: #b91c1c; }
 
   .footer {
    margin: 16px 0 0;
@@ -169,20 +200,39 @@
  </style>
 </head>
 <body>
- <main class="wrap">
+ <main class="wrap" data-token="{{TOKEN}}" data-checked-in="{{CHECKED_IN_BOOL}}">
   <section class="hero" aria-label="QR registration profile summary">
    <p class="eyebrow">Public registration profile</p>
    <h1>{{FULL_NAME}}</h1>
-   <p class="lede">This profile was opened from a scanned QR code and the first scan has been recorded automatically.</p>
+   <p class="lede">This profile was opened from a scanned QR code. The check-in button updates the saved record instantly.</p>
 
    <div class="chips" aria-label="Profile summary badges">
-    <span class="chip lime">Scan confirmed</span>
-    <span class="chip orange">{{REGISTRATION_STATUS}}</span>
-    <span class="chip soft">{{SCAN_SUMMARY}}</span>
+    <span class="chip lime" id="checkedInBadge">{{CHECK_IN_STATUS_TEXT}}</span>
+    <span class="chip soft" id="checkInTimeBadge">{{CHECK_IN_TIME}}</span>
    </div>
   </section>
 
   <section class="card" aria-label="Registration details">
+   <div class="row">
+    <div class="label">Attendee ID</div>
+    <div class="value">{{ATTENDEE_ID}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Email</div>
+    <div class="value">{{EMAIL}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Confirmation Status</div>
+    <div class="value">{{CONFIRMATION_STATUS}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Checked In</div>
+    <div class="value" id="checkedInValue">{{CHECKED_IN}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Checked In Time</div>
+    <div class="value" id="checkInTimeValue">{{CHECK_IN_TIME}}</div>
+   </div>
    <div class="row">
     <div class="label">First Name</div>
     <div class="value">{{FIRST_NAME}}</div>
@@ -203,17 +253,95 @@
     <div class="label">Organization</div>
     <div class="value">{{ORGANIZATION}}</div>
    </div>
-   <div class="row">
-    <div class="label">Registration Status</div>
-    <div class="value">{{REGISTRATION_STATUS}}</div>
-   </div>
-   <div class="row">
-    <div class="label">First Scanned At</div>
-    <div class="value">{{SCANNED_AT}}</div>
-   </div>
   </section>
 
-  <p class="note">QR access verified for <strong>{{FULL_NAME}}</strong>. Scan confirmation is captured automatically when this page opens.</p>
+  <section class="actions" aria-label="Check in action">
+   <button id="checkInBtn" {{CHECK_IN_BUTTON_DISABLED}}>{{CHECK_IN_BUTTON_TEXT}}</button>
+   <p id="msg"></p>
+  </section>
+
+  <p class="footer">QR access verified for <strong>{{FULL_NAME}}</strong>.</p>
  </main>
+
+ <script>
+  (function(){
+   var root = document.querySelector(".wrap")
+   var token = root.dataset.token
+   var btn = document.getElementById("checkInBtn")
+   var msg = document.getElementById("msg")
+   var checkedInValue = document.getElementById("checkedInValue")
+   var checkInTimeValue = document.getElementById("checkInTimeValue")
+   var checkedInBadge = document.getElementById("checkedInBadge")
+   var checkInTimeBadge = document.getElementById("checkInTimeBadge")
+
+   function formatTimestamp(value){
+    if(!value || value === "Pending"){
+     return "Pending"
+    }
+
+    var date = new Date(value)
+    if(isNaN(date.getTime())){
+     return value
+    }
+
+    return new Intl.DateTimeFormat("en-GB", {
+     timeZone: "UTC",
+     day: "2-digit",
+     month: "short",
+     year: "numeric",
+     hour: "2-digit",
+     minute: "2-digit",
+     hour12: false
+    }).format(date) + " UTC"
+   }
+
+   function setCheckedInState(data){
+    var record = data && data.data ? data.data : data
+    var isCheckedIn = !!(record && record.checkedIn)
+    var checkInTime = record && record.checkInTime ? formatTimestamp(record.checkInTime) : "Pending"
+
+    checkedInValue.textContent = isCheckedIn ? "Yes" : "No"
+    checkInTimeValue.textContent = checkInTime
+    checkedInBadge.textContent = isCheckedIn ? "Checked in" : "Pending check-in"
+    checkInTimeBadge.textContent = checkInTime
+
+    btn.disabled = true
+    btn.textContent = isCheckedIn ? "Checked in" : "Check in"
+   }
+
+   btn.addEventListener("click", async function(){
+    msg.className = ""
+    msg.textContent = "Checking in..."
+
+    try{
+     var res = await fetch("/api/qr-check-in", {
+      method: "POST",
+      headers: {
+       "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ token: token })
+     })
+
+     var data = await res.json()
+
+     if(!res.ok || !data.success){
+      throw new Error((data && data.error && data.error.message) || "Check-in failed")
+     }
+
+     setCheckedInState(data)
+     msg.className = "ok"
+     msg.textContent = "Checked in successfully"
+    }catch(error){
+     msg.className = "err"
+     msg.textContent = error && error.message ? error.message : "Network error"
+    }
+   })
+
+   if(root.dataset.checkedIn === "true"){
+    btn.disabled = true
+    btn.textContent = "Checked in"
+   }
+  })()
+ </script>
 </body>
 </html>

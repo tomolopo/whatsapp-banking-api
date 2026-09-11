@@ -8,10 +8,13 @@ const MAX_TOKEN_ATTEMPTS = 5
 
 export interface QrRegistrationInput {
  phoneNumber: string
+ attendeeId: string
+ email: string
  firstName: string
  lastName: string
  jobTitle: string
  mdaSector: string
+ confirmationStatus: string
  registrationStatus: string
  organization: string
 }
@@ -19,6 +22,8 @@ export interface QrRegistrationInput {
 export interface QrRegistrationRecord extends QrRegistrationInput {
  id: string
  qrToken: string
+ checkedIn: boolean
+ checkInTime: string | null
  scannedAt: string | null
  lastScannedAt: string | null
  scanCount: number
@@ -30,12 +35,17 @@ type QrRegistrationRow = {
  id: string
  qr_token: string
  phone_number: string
+ attendee_id: string | null
+ email: string | null
  first_name: string
  last_name: string
  job_title: string
  mda_sector: string
+ confirmation_status: string | null
  registration_status: string
  organization: string
+ checked_in: boolean
+ check_in_time: string | null
  scanned_at: string | null
  last_scanned_at: string | null
  scan_count: number
@@ -64,12 +74,17 @@ function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
   id: row.id,
   qrToken: row.qr_token,
   phoneNumber: row.phone_number,
+  attendeeId: row.attendee_id || "",
+  email: row.email || "",
   firstName: row.first_name,
   lastName: row.last_name,
   jobTitle: row.job_title,
   mdaSector: row.mda_sector,
+  confirmationStatus: row.confirmation_status || "",
   registrationStatus: row.registration_status,
   organization: row.organization,
+  checkedIn: row.checked_in,
+  checkInTime: row.check_in_time,
   scannedAt: row.scanned_at,
   lastScannedAt: row.last_scanned_at,
   scanCount: row.scan_count,
@@ -82,20 +97,25 @@ function toDbRow(input: QrRegistrationInput, qrToken: string){
  return {
   qr_token: qrToken,
   phone_number: input.phoneNumber,
+  attendee_id: input.attendeeId,
+  email: input.email,
   first_name: input.firstName,
   last_name: input.lastName,
   job_title: input.jobTitle,
   mda_sector: input.mdaSector,
+  confirmation_status: input.confirmationStatus,
   registration_status: input.registrationStatus,
   organization: input.organization
  }
 }
 
+const SELECT_COLUMNS = "id, qr_token, phone_number, attendee_id, email, first_name, last_name, job_title, mda_sector, confirmation_status, registration_status, organization, checked_in, check_in_time, scanned_at, last_scanned_at, scan_count, created_at, updated_at"
+
 async function insertQrRegistration(input: QrRegistrationInput, qrToken: string): Promise<QrRegistrationRecord> {
  const { data, error } = await supabase
   .from(TABLE)
   .insert([toDbRow(input, qrToken)])
-  .select("id, qr_token, phone_number, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
+  .select(SELECT_COLUMNS)
   .single()
 
  if(error){
@@ -134,7 +154,7 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
 export async function getQrRegistrationByToken(qrToken: string): Promise<QrRegistrationRecord | null> {
  const { data, error } = await supabase
   .from(TABLE)
-  .select("id, qr_token, phone_number, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
+  .select(SELECT_COLUMNS)
   .eq("qr_token", qrToken)
   .maybeSingle()
 
@@ -152,6 +172,18 @@ export async function recordQrRegistrationScan(qrToken: string): Promise<QrRegis
 
  if(error){
   throw new AppError("QR_REGISTRATION_SCAN_FAILED", error.message, 500)
+ }
+
+ return data ? mapRow(data as QrRegistrationRow) : null
+}
+
+export async function recordQrRegistrationCheckIn(qrToken: string): Promise<QrRegistrationRecord | null> {
+ const { data, error } = await supabase.rpc("record_qr_registration_check_in", {
+  p_qr_token: qrToken
+ })
+
+ if(error){
+  throw new AppError("QR_REGISTRATION_CHECK_IN_FAILED", error.message, 500)
  }
 
  return data ? mapRow(data as QrRegistrationRow) : null

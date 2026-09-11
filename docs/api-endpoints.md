@@ -153,7 +153,13 @@ Use `token` in the query string to fetch the image later.
 ### `/api/qr-profile-page`
 
 Looks up the QR token, records the scan timestamp, and renders the public profile page.
-The page displays First Name, Last Name, Job Title, MDA Sector, Registration Status, Organization, and the scan timeline.
+The page displays Attendee ID, Email, Confirmation Status, Checked In, Checked In Time, First Name, Last Name, Job Title, MDA Sector, Registration Status, Organization, and the scan timeline.
+
+### `/api/qr-check-in`
+
+Marks the attendee as checked in for the matching QR token.
+The endpoint is used by the profile page button and returns the updated registration record.
+Repeated clicks are idempotent because the stored `checked_in` state and `check_in_time` are persisted in Supabase.
 
 ## Pages
 

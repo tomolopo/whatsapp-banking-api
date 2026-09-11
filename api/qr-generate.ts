@@ -35,10 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
 
   const input: QrRegistrationInput = {
    phoneNumber: readField(body.phoneNumber, "phoneNumber"),
+   attendeeId: readField(body.attendeeId, "attendeeId"),
+   email: readField(body.email, "email"),
    firstName: readField(body.firstName, "firstName"),
    lastName: readField(body.lastName, "lastName"),
    jobTitle: readField(body.jobTitle, "jobTitle"),
    mdaSector: readField(body.mdaSector, "mdaSector"),
+   confirmationStatus: readField(body.confirmationStatus, "confirmationStatus"),
    registrationStatus: readField(body.registrationStatus, "registrationStatus"),
    organization: readField(body.organization, "organization")
   }

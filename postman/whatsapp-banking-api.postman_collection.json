@@ -1259,7 +1259,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phoneNumber\": \"{{qrPhoneNumber}}\",\n  \"firstName\": \"{{qrFirstName}}\",\n  \"lastName\": \"{{qrLastName}}\",\n  \"jobTitle\": \"{{qrJobTitle}}\",\n  \"mdaSector\": \"{{qrMdaSector}}\",\n  \"registrationStatus\": \"{{qrRegistrationStatus}}\",\n  \"organization\": \"{{qrOrganization}}\"\n}"
+              "raw": "{\n  \"phoneNumber\": \"{{qrPhoneNumber}}\",\n  \"attendeeId\": \"{{qrAttendeeId}}\",\n  \"email\": \"{{qrEmail}}\",\n  \"firstName\": \"{{qrFirstName}}\",\n  \"lastName\": \"{{qrLastName}}\",\n  \"jobTitle\": \"{{qrJobTitle}}\",\n  \"mdaSector\": \"{{qrMdaSector}}\",\n  \"confirmationStatus\": \"{{qrConfirmationStatus}}\",\n  \"registrationStatus\": \"{{qrRegistrationStatus}}\",\n  \"organization\": \"{{qrOrganization}}\"\n}"
             },
             "description": "Stores a QR registration and generates the QR payload."
           },
@@ -1274,7 +1274,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"phoneNumber\": \"2348012345678\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"scannedAt\": null,
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"phoneNumber\": \"2348012345678\",\n    \"attendeeId\": \"ATD-001\",\n    \"email\": \"jane@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"confirmationStatus\": \"Confirmed\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"checkedIn\": false,\n    \"checkInTime\": null,\n    \"scannedAt\": null,
 \n    \"lastScannedAt\": null,\n    \"scanCount\": 0,\n    \"createdAt\": \"2026-09-07T12:00:00.000Z\",\n    \"updatedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"profileUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-profile-page?token=qr_token_example_001\",\n    \"qrCodeUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-code?token=qr_token_example_001\",\n    \"qrDataUrl\": \"data:image/png;base64,generated-qr-data-url\"\n  },\n  \"meta\": null\n}"
             }
           ]
@@ -1349,7 +1349,48 @@
                   "value": "text/html; charset=utf-8"
                 }
               ],
-              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>Registration profile page with scan timestamp</body>\n</html>"
+              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>Registration profile page with scan timestamp and check-in button</body>\n</html>"
+            }
+          ]
+        },
+        {
+          "name": "qr-check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/qr-check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "qr-check-in"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{qrToken}}\"\n}"
+            },
+            "description": "Marks the attendee as checked in and returns the updated QR registration."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_check_in_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"phoneNumber\": \"2348012345678\",\n    \"attendeeId\": \"ATD-001\",\n    \"email\": \"jane@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"confirmationStatus\": \"Confirmed\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"checkedIn\": true,\n    \"checkInTime\": \"2026-09-07T12:30:00.000Z\",\n    \"scannedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"lastScannedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"scanCount\": 1,\n    \"createdAt\": \"2026-09-07T12:00:00.000Z\",\n    \"updatedAt\": \"2026-09-07T12:30:00.000Z\"\n  },\n  \"meta\": null\n}"
             }
           ]
         }

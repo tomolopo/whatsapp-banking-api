@@ -218,6 +218,17 @@ const openapi = {
     }
    }
   },
+  "/api/qr-check-in": {
+   post: {
+    summary: "QR check-in action",
+    responses: {
+     "200": { description: "Updated QR registration" },
+     "404": { description: "Profile unavailable" },
+     "405": { description: "Method not allowed" },
+     "500": { description: "Server error" }
+    }
+   }
+  },
   "/api/docs": {
    get: {
     summary: "Swagger UI and OpenAPI JSON",

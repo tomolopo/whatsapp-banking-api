@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import fs from "fs"
 import path from "path"
-import { recordQrRegistrationScan } from "../lib/qr/registrations"
+import { getQrRegistrationByToken, recordQrRegistrationScan } from "../lib/qr/registrations"
 import { escapeHtml } from "../lib/utils/escape"
 
 function renderMessage(res: VercelResponse, statusCode: number, title: string, message: string){
@@ -12,15 +12,15 @@ function renderMessage(res: VercelResponse, statusCode: number, title: string, m
 
 function formatTimestamp(value: string | null): string {
  if(!value){
-  return "Pending first scan"
+  return "Pending"
  }
 
  const date = new Date(value)
  if(Number.isNaN(date.getTime())){
-  return "Pending first scan"
+  return "Pending"
  }
 
- const formatted = new Intl.DateTimeFormat("en-GB", {
+ return new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
   day: "2-digit",
   month: "short",
@@ -28,17 +28,11 @@ function formatTimestamp(value: string | null): string {
   hour: "2-digit",
   minute: "2-digit",
   hour12: false
- }).format(date)
-
- return `${formatted} UTC`
+ }).format(date) + " UTC"
 }
 
-function buildScanSummary(scanCount: number): string {
- if(scanCount <= 0){
-  return "Awaiting scan"
- }
-
- return scanCount === 1 ? "1 scan logged" : `${scanCount} scans logged`
+function booleanText(value: boolean): string {
+ return value ? "Yes" : "No"
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse){
@@ -57,11 +51,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   const filePath = path.join(process.cwd(), "frontend", "qr-profile.html")
   let html = fs.readFileSync(filePath, "utf8")
   const fullName = `${record.firstName} ${record.lastName}`.trim()
-  const scanSummary = buildScanSummary(record.scanCount)
+  const checkedInText = booleanText(record.checkedIn)
+  const checkInButtonDisabled = record.checkedIn ? "disabled aria-disabled=\"true\"" : ""
+  const checkInButtonText = record.checkedIn ? "Checked in" : "Check in"
 
   html = html
+   .split("{{TOKEN}}")
+   .join(escapeHtml(record.qrToken))
+   .split("{{CHECKED_IN_BOOL}}")
+   .join(record.checkedIn ? "true" : "false")
    .split("{{FULL_NAME}}")
    .join(escapeHtml(fullName))
+   .split("{{ATTENDEE_ID}}")
+   .join(escapeHtml(record.attendeeId || ""))
+   .split("{{EMAIL}}")
+   .join(escapeHtml(record.email || ""))
+   .split("{{CONFIRMATION_STATUS}}")
+   .join(escapeHtml(record.confirmationStatus || ""))
    .split("{{FIRST_NAME}}")
    .join(escapeHtml(record.firstName))
    .split("{{LAST_NAME}}")
@@ -74,14 +80,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
    .join(escapeHtml(record.registrationStatus))
    .split("{{ORGANIZATION}}")
    .join(escapeHtml(record.organization))
-   .split("{{SCANNED_AT}}")
-   .join(escapeHtml(formatTimestamp(record.scannedAt)))
-   .split("{{LAST_SCANNED_AT}}")
-   .join(escapeHtml(formatTimestamp(record.lastScannedAt)))
-   .split("{{SCAN_COUNT}}")
-   .join(escapeHtml(String(record.scanCount)))
-   .split("{{SCAN_SUMMARY}}")
-   .join(escapeHtml(scanSummary))
+   .split("{{CHECKED_IN}}")
+   .join(escapeHtml(checkedInText))
+   .split("{{CHECK_IN_TIME}}")
+   .join(escapeHtml(formatTimestamp(record.checkInTime)))
+   .split("{{CHECK_IN_STATUS_TEXT}}")
+   .join(escapeHtml(record.checkedIn ? "Checked in" : "Pending check-in"))
+   .split("{{CHECK_IN_BUTTON_DISABLED}}")
+   .join(checkInButtonDisabled)
+   .split("{{CHECK_IN_BUTTON_TEXT}}")
+   .join(escapeHtml(checkInButtonText))
 
   res.setHeader("Content-Type", "text/html; charset=utf-8")
   res.setHeader("Cache-Control", "no-store")
