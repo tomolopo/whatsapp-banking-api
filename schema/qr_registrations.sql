@@ -33,6 +33,44 @@ alter table public.qr_registrations add column if not exists scan_count integer 
 alter table public.qr_registrations add column if not exists created_at timestamptz not null default now();
 alter table public.qr_registrations add column if not exists updated_at timestamptz not null default now();
 
+create or replace function public.next_qr_attendee_id()
+returns text
+language plpgsql
+as $$
+declare
+  next_number bigint;
+begin
+  perform pg_advisory_xact_lock(hashtext('qr_registrations_attendee_id'));
+
+  select coalesce(max(substring(attendee_id from '[0-9]+$')::bigint), 0) + 1
+  into next_number
+  from public.qr_registrations
+  where attendee_id ~ '^MDA-[0-9]+$';
+
+  return 'MDA-' || lpad(next_number::text, 4, '0');
+end;
+$$;
+
+create or replace function public.set_qr_registration_attendee_id()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.attendee_id is null or btrim(new.attendee_id) = '' then
+    new.attendee_id = public.next_qr_attendee_id();
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_qr_registrations_attendee_id on public.qr_registrations;
+
+create trigger trg_qr_registrations_attendee_id
+before insert on public.qr_registrations
+for each row
+execute function public.set_qr_registration_attendee_id();
+
 create or replace function public.set_qr_registrations_updated_at()
 returns trigger
 language plpgsql

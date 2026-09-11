@@ -235,49 +235,45 @@
       <input id="phoneNumber" type="tel" placeholder="2348012345678" required />
      </label>
      <label>
-      Attendee ID
-      <input id="attendeeId" placeholder="ATD-001" required />
+      Email
+      <input id="email" type="email" placeholder="jane@example.com" required />
      </label>
     </div>
 
     <div class="grid">
-     <label>
-      Email
-      <input id="email" type="email" placeholder="jane@example.com" required />
-     </label>
      <label>
       Confirmation Status
       <input id="confirmationStatus" placeholder="Confirmed" required />
      </label>
-    </div>
-
-    <div class="grid">
      <label>
       First Name
       <input id="firstName" placeholder="First Name" required />
      </label>
+    </div>
+
+    <div class="grid">
      <label>
       Last Name
       <input id="lastName" placeholder="Last Name" required />
      </label>
-    </div>
-
-    <div class="grid">
      <label>
       Job Title
       <input id="jobTitle" placeholder="Job Title" required />
      </label>
-     <label>
-      MDA Sector
-      <input id="mdaSector" placeholder="MDA Sector" required />
-     </label>
     </div>
 
     <div class="grid">
      <label>
+      MDA Sector
+      <input id="mdaSector" placeholder="MDA Sector" required />
+     </label>
+     <label>
       Registration Status
       <input id="registrationStatus" placeholder="Registration Status" required />
      </label>
+    </div>
+
+    <div class="grid">
      <label>
       Organization
       <input id="organization" placeholder="Organization" required />
@@ -344,7 +340,6 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
        phoneNumber: document.getElementById("phoneNumber").value,
-       attendeeId: document.getElementById("attendeeId").value,
        email: document.getElementById("email").value,
        firstName: document.getElementById("firstName").value,
        lastName: document.getElementById("lastName").value,

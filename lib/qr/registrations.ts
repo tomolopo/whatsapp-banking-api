@@ -8,7 +8,6 @@ const MAX_TOKEN_ATTEMPTS = 5
 
 export interface QrRegistrationInput {
  phoneNumber: string
- attendeeId: string
  email: string
  firstName: string
  lastName: string
@@ -22,6 +21,7 @@ export interface QrRegistrationInput {
 export interface QrRegistrationRecord extends QrRegistrationInput {
  id: string
  qrToken: string
+ attendeeId: string
  checkedIn: boolean
  checkInTime: string | null
  scannedAt: string | null
@@ -97,7 +97,6 @@ function toDbRow(input: QrRegistrationInput, qrToken: string){
  return {
   qr_token: qrToken,
   phone_number: input.phoneNumber,
-  attendee_id: input.attendeeId,
   email: input.email,
   first_name: input.firstName,
   last_name: input.lastName,
