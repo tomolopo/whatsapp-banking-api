@@ -147,8 +147,9 @@ Typical response fields include `attendeeId`, `profileUrl`, `qrCodeUrl`, `qrData
 
 ### `/api/qr-code`
 
-Returns the PNG image for a generated QR token.
-Use `token` in the query string to fetch the image later.
+When opened directly in a browser, renders the branded QR access pass using the generated token.
+When requested as an image, returns the PNG QR image for the same token.
+Use `token` in the query string; add `output=image` if you want to force the PNG response.
 
 ### `/api/qr-profile-page`
 

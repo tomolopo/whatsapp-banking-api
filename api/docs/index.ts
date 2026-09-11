@@ -200,9 +200,9 @@ const openapi = {
   },
   "/api/qr-code": {
    get: {
-    summary: "Fetch QR code image",
+    summary: "Fetch QR code image or pass",
     responses: {
-     "200": { description: "PNG image" },
+     "200": { description: "Branded access pass HTML or PNG image" },
      "400": { description: "Invalid request" },
      "404": { description: "QR code not found" },
      "500": { description: "Server error" }

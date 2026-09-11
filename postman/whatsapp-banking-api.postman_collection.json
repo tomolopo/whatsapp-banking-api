@@ -1283,7 +1283,7 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/qr-code?token={{qrToken}}",
+              "raw": "{{baseUrl}}/api/qr-code?token={{qrToken}}&output=image",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1295,10 +1295,14 @@
                 {
                   "key": "token",
                   "value": "{{qrToken}}"
+                },
+                {
+                  "key": "output",
+                  "value": "image"
                 }
               ]
             },
-            "description": "Returns the generated QR image as PNG."
+            "description": "Returns the generated QR image as PNG when output=image is requested."
           },
           "response": [
             {
