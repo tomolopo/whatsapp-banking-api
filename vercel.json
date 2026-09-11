@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/qr-code.jpg",
+      "destination": "/api/qr-code?output=image"
+    }
+  ]
+}
