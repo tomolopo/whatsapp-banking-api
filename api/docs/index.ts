@@ -216,9 +216,7 @@ const openapi = {
      "200": { description: "HTML page" },
      "404": { description: "Profile unavailable" }
     }
-   }
-  },
-  "/api/qr-check-in": {
+   },
    post: {
     summary: "QR check-in action",
     responses: {

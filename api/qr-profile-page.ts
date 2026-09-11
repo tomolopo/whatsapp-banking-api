@@ -1,8 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import fs from "fs"
 import path from "path"
-import { getQrRegistrationByToken, recordQrRegistrationScan } from "../lib/qr/registrations"
+import { v4 as uuid } from "uuid"
+import { recordQrRegistrationCheckIn, recordQrRegistrationScan } from "../lib/qr/registrations"
+import { AppError } from "../lib/utils/errors"
 import { escapeHtml } from "../lib/utils/escape"
+import { sendError, sendSuccess } from "../lib/utils/response"
 
 function renderMessage(res: VercelResponse, statusCode: number, title: string, message: string){
  res.setHeader("Content-Type", "text/html; charset=utf-8")
@@ -35,7 +38,42 @@ function booleanText(value: boolean): string {
  return value ? "Yes" : "No"
 }
 
+function readToken(value: unknown): string {
+ if(typeof value !== "string"){
+  throw new AppError("BAD_REQUEST", "token is required", 400)
+ }
+
+ const trimmed = value.trim()
+ if(!trimmed){
+  throw new AppError("BAD_REQUEST", "token is required", 400)
+ }
+
+ return trimmed
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse){
+ const requestId = uuid()
+
+ if(req.method === "POST"){
+  try{
+   const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {}
+   const token = readToken(body.token ?? req.query.token)
+   const record = await recordQrRegistrationCheckIn(token)
+
+   if(!record){
+    throw new AppError("QR_PROFILE_NOT_FOUND", "Invalid or expired QR link", 404)
+   }
+
+   return sendSuccess(res, requestId, record)
+  }catch(err){
+   return sendError(res, requestId, err)
+  }
+ }
+
+ if(req.method !== "GET"){
+  return sendError(res, requestId, new AppError("METHOD_NOT_ALLOWED", "Method not allowed", 405))
+ }
+
  try{
   const token = req.query.token
 

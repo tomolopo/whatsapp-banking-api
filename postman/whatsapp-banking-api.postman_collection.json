@@ -1274,8 +1274,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"phoneNumber\": \"2348012345678\",\n    \"attendeeId\": \"ATD-001\",\n    \"email\": \"jane@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"confirmationStatus\": \"Confirmed\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"checkedIn\": false,\n    \"checkInTime\": null,\n    \"scannedAt\": null,
-\n    \"lastScannedAt\": null,\n    \"scanCount\": 0,\n    \"createdAt\": \"2026-09-07T12:00:00.000Z\",\n    \"updatedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"profileUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-profile-page?token=qr_token_example_001\",\n    \"qrCodeUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-code?token=qr_token_example_001\",\n    \"qrDataUrl\": \"data:image/png;base64,generated-qr-data-url\"\n  },\n  \"meta\": null\n}"
+              "body": "{\n  \"success\": true,\n  \"requestId\": \"req_qr_001\",\n  \"data\": {\n    \"id\": \"8fd6df08-9d7c-4b56-bc30-f3fb2ebd5d50\",\n    \"qrToken\": \"qr_token_example_001\",\n    \"phoneNumber\": \"2348012345678\",\n    \"attendeeId\": \"ATD-001\",\n    \"email\": \"jane@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"jobTitle\": \"Director\",\n    \"mdaSector\": \"Public Service\",\n    \"confirmationStatus\": \"Confirmed\",\n    \"registrationStatus\": \"Approved\",\n    \"organization\": \"Ministry of Example\",\n    \"checkedIn\": false,\n    \"checkInTime\": null,\n    \"scannedAt\": null,\n    \"lastScannedAt\": null,\n    \"scanCount\": 0,\n    \"createdAt\": \"2026-09-07T12:00:00.000Z\",\n    \"updatedAt\": \"2026-09-07T12:00:00.000Z\",\n    \"profileUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-profile-page?token=qr_token_example_001\",\n    \"qrCodeUrl\": \"https://whatsapp-banking-api.vercel.app/api/qr-code?token=qr_token_example_001\",\n    \"qrDataUrl\": \"data:image/png;base64,generated-qr-data-url\"\n  },\n  \"meta\": null\n}"
             }
           ]
         },
@@ -1317,44 +1316,7 @@
           ]
         },
         {
-          "name": "qr-profile-page",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/qr-profile-page?token={{qrToken}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "qr-profile-page"
-              ],
-              "query": [
-                {
-                  "key": "token",
-                  "value": "{{qrToken}}"
-                }
-              ]
-            },
-            "description": "Returns the public QR profile HTML page and logs the scan timestamp on open."
-          },
-          "response": [
-            {
-              "name": "HTML",
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "text/html; charset=utf-8"
-                }
-              ],
-              "body": "<!doctype html>\n<html lang=\"en\">\n  <body>Registration profile page with scan timestamp and check-in button</body>\n</html>"
-            }
-          ]
-        },
-        {
-          "name": "qr-check-in",
+          "name": "qr-profile-page check-in",
           "request": {
             "method": "POST",
             "header": [
@@ -1364,13 +1326,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/qr-check-in",
+              "raw": "{{baseUrl}}/api/qr-profile-page",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "qr-check-in"
+                "qr-profile-page"
               ]
             },
             "body": {
