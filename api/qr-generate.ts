@@ -50,8 +50,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   const qrCodeUrl = buildQrCodeUrl(record.qrToken)
   const qrDataUrl = await QRCode.toDataURL(profileUrl, {
    errorCorrectionLevel: "M",
-   margin: 1,
-   width: 360
+   margin: 2,
+   width: 360,
+   color: {
+    dark: "#1e7b44",
+    light: "#f7f1df"
+   }
   })
 
   return res.status(200).json({

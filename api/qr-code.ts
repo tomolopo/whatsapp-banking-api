@@ -18,8 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   const profileUrl = `${(process.env.PUBLIC_BASE_URL || "https://whatsapp-banking-api.vercel.app").replace(/\/$/, "")}/api/qr-profile-page?token=${encodeURIComponent(record.qrToken)}`
   const qrBuffer = await QRCode.toBuffer(profileUrl, {
    errorCorrectionLevel: "M",
-   margin: 1,
-   width: 360
+   margin: 2,
+   width: 360,
+   color: {
+    dark: "#1e7b44",
+    light: "#f7f1df"
+   }
   })
 
   res.setHeader("Content-Type", "image/png")
