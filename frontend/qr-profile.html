@@ -6,123 +6,78 @@
  <title>QR Profile</title>
  <style>
   :root {
-   --bg: #0a2f29;
-   --bg-2: #11453c;
-   --panel: rgba(11, 36, 32, 0.78);
-   --card: rgba(248, 246, 238, 0.96);
-   --card-dark: #143f36;
-   --lime: #d6ff2f;
-   --lime-deep: #9fd300;
-   --orange: #ff9b43;
-   --orange-deep: #e36f14;
-   --ink: #083128;
-   --muted: #5f736d;
-   --soft: #d9e8df;
-   --line: rgba(255, 255, 255, 0.12);
-   --shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+   --bg: #eef4ef;
+   --card: #ffffff;
+   --ink: #123126;
+   --muted: #63726c;
+   --line: #dbe5de;
+   --accent: #166b57;
+   --accent-2: #d9ff47;
+   --shadow: 0 18px 50px rgba(10, 31, 25, 0.12);
   }
 
-  * {
-   box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  html, body {
-   min-height: 100%;
-  }
+  html, body { min-height: 100%; }
 
   body {
    margin: 0;
    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
    background:
-    radial-gradient(circle at 18% 16%, rgba(214, 255, 47, 0.18), transparent 20%),
-    radial-gradient(circle at 82% 12%, rgba(255, 155, 67, 0.18), transparent 18%),
-    radial-gradient(circle at 70% 78%, rgba(214, 255, 47, 0.1), transparent 22%),
-    linear-gradient(140deg, #06261f 0%, #0b3b32 45%, #081d19 100%);
-   color: #f6fff9;
-   overflow-x: hidden;
+    radial-gradient(circle at top left, rgba(217, 255, 71, 0.18), transparent 18%),
+    linear-gradient(180deg, #f5f8f6 0%, #eef4ef 100%);
+   color: var(--ink);
   }
 
-  body::before {
-   content: "";
-   position: fixed;
-   inset: 0;
-   background-image: radial-gradient(rgba(227, 243, 224, 0.18) 1.25px, transparent 1.25px);
-   background-size: 18px 18px;
-   opacity: 0.45;
-   pointer-events: none;
-   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent 90%);
-  }
-
-  .shell {
-   position: relative;
-   width: min(1240px, calc(100% - 32px));
+  .wrap {
+   width: min(760px, calc(100% - 24px));
    margin: 0 auto;
-   padding: 32px 0 48px;
+   padding: 24px 0 40px;
   }
 
   .hero {
-   position: relative;
-   display: grid;
-   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
-   gap: 24px;
-   padding: 28px;
-   border-radius: 34px;
-   background: linear-gradient(145deg, rgba(12, 53, 46, 0.9), rgba(8, 34, 29, 0.78));
-   border: 1px solid rgba(214, 255, 47, 0.16);
+   background: linear-gradient(145deg, #11453c, #0a2f29);
+   color: white;
+   border-radius: 26px;
+   padding: 24px;
    box-shadow: var(--shadow);
-   backdrop-filter: blur(16px);
-   overflow: hidden;
-  }
-
-  .hero::after {
-   content: "";
-   position: absolute;
-   inset: auto -120px -100px auto;
-   width: 280px;
-   height: 280px;
-   border-radius: 50%;
-   background: radial-gradient(circle, rgba(255, 155, 67, 0.24) 0%, rgba(255, 155, 67, 0.03) 45%, transparent 70%);
-   pointer-events: none;
   }
 
   .eyebrow {
-   margin: 0 0 12px;
-   font-size: 0.78rem;
-   letter-spacing: 0.24em;
+   margin: 0 0 10px;
+   font-size: 0.76rem;
+   letter-spacing: 0.18em;
    text-transform: uppercase;
    color: #bfe699;
   }
 
   h1 {
    margin: 0;
-   max-width: 10ch;
-   font-size: clamp(3rem, 6vw, 6.4rem);
-   line-height: 0.92;
-   color: var(--lime);
-   text-wrap: balance;
+   font-size: clamp(2rem, 4vw, 3.2rem);
+   line-height: 1.05;
+   color: var(--accent-2);
   }
 
   .lede {
-   max-width: 56ch;
-   margin: 18px 0 0;
-   font-size: 1.02rem;
-   line-height: 1.7;
-   color: #d9e8df;
+   margin: 12px 0 0;
+   max-width: 60ch;
+   line-height: 1.65;
+   color: #e6f4ed;
   }
 
   .chips {
    display: flex;
    flex-wrap: wrap;
    gap: 10px;
-   margin-top: 22px;
+   margin-top: 18px;
   }
 
   .chip {
    display: inline-flex;
    align-items: center;
    gap: 8px;
-   border-radius: 999px;
    padding: 10px 14px;
+   border-radius: 999px;
    font-size: 0.8rem;
    font-weight: 800;
    letter-spacing: 0.08em;
@@ -130,286 +85,135 @@
   }
 
   .chip.lime {
-   background: var(--lime);
+   background: var(--accent-2);
    color: #0c352c;
   }
 
   .chip.orange {
-   background: var(--orange);
+   background: #ff9b43;
    color: white;
   }
 
-  .chip.dark {
-   background: rgba(255, 255, 255, 0.08);
+  .chip.soft {
+   background: rgba(255, 255, 255, 0.1);
    color: #effaf2;
-   border: 1px solid rgba(255, 255, 255, 0.14);
-  }
-
-  .art {
-   display: grid;
-   gap: 16px;
-   align-content: center;
-  }
-
-  .monogram {
-   width: 132px;
-   aspect-ratio: 1;
-   border-radius: 30px;
-   display: grid;
-   place-items: center;
-   background: linear-gradient(145deg, var(--lime), #9fd200);
-   color: #093129;
-   font-size: clamp(2.4rem, 4vw, 3.4rem);
-   font-weight: 900;
-   letter-spacing: 0.06em;
-   box-shadow: 0 24px 40px rgba(0, 0, 0, 0.22);
-  }
-
-  .panel {
-   border-radius: 28px;
-   padding: 18px 20px;
-   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
-  }
-
-  .panel.light {
-   background: var(--card);
-   color: var(--ink);
-  }
-
-  .panel.orange {
-   background: linear-gradient(145deg, #ffb66c, var(--orange));
-   color: white;
-  }
-
-  .panel .label {
-   display: block;
-   margin-bottom: 8px;
-   font-size: 0.74rem;
-   letter-spacing: 0.18em;
-   text-transform: uppercase;
-   opacity: 0.84;
-  }
-
-  .panel strong {
-   display: block;
-   font-size: 1.06rem;
-   line-height: 1.4;
-   word-break: break-word;
-  }
-
-  .details {
-   display: grid;
-   grid-template-columns: repeat(2, minmax(0, 1fr));
-   gap: 18px;
-   margin-top: 20px;
+   border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .card {
+   margin-top: 18px;
    background: var(--card);
-   color: var(--ink);
-   border-radius: 30px;
+   border-radius: 24px;
    padding: 22px;
-   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.16);
+   border: 1px solid rgba(18, 49, 38, 0.08);
+   box-shadow: var(--shadow);
   }
 
-  .card.dark {
-   background: linear-gradient(160deg, rgba(18, 72, 62, 0.98), rgba(10, 48, 42, 0.98));
-   color: #f2fff6;
-   border: 1px solid rgba(214, 255, 47, 0.14);
-  }
-
-  .card h2 {
-   margin: 0 0 16px;
-   font-size: 0.84rem;
-   letter-spacing: 0.18em;
-   text-transform: uppercase;
-   color: #0d5445;
-  }
-
-  .card.dark h2 {
-   color: #bfd8d0;
-  }
-
-  .field {
+  .row {
    display: grid;
-   gap: 6px;
-   margin-top: 16px;
+   grid-template-columns: 180px minmax(0, 1fr);
+   gap: 16px;
+   padding: 14px 0;
+   border-bottom: 1px solid var(--line);
   }
 
-  .field:first-of-type {
-   margin-top: 0;
+  .row:last-child {
+   border-bottom: 0;
+   padding-bottom: 0;
   }
 
-  .field .label {
+  .label {
    font-size: 0.76rem;
-   letter-spacing: 0.14em;
    text-transform: uppercase;
+   letter-spacing: 0.1em;
    color: var(--muted);
   }
 
-  .card.dark .field .label {
-   color: #adc7be;
-  }
-
-  .field .value {
-   font-size: 1.12rem;
-   line-height: 1.45;
+  .value {
+   font-size: 1rem;
+   line-height: 1.55;
    font-weight: 700;
    word-break: break-word;
   }
 
-  .details-grid {
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 18px;
-   margin-top: 18px;
-  }
-
-  .footer {
-   margin: 18px 0 0;
-   text-align: center;
-   color: #dbe9e2;
+  .note {
+   margin: 16px 0 0;
+   color: var(--muted);
    font-size: 0.92rem;
    line-height: 1.6;
   }
 
-  .footer strong {
-   color: var(--lime);
-  }
-
-  @media (max-width: 980px) {
-   .hero,
-   .details,
-   .details-grid {
-    grid-template-columns: 1fr;
-   }
-
-   .art {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-   }
-
-   .monogram {
-    width: 100%;
-    min-height: 132px;
-   }
+  .footer {
+   margin: 16px 0 0;
+   font-size: 0.9rem;
+   color: var(--muted);
+   text-align: center;
   }
 
   @media (max-width: 640px) {
-   .shell {
-    width: min(100% - 20px, 1240px);
-    padding-top: 16px;
+   .wrap {
+    width: min(100% - 16px, 760px);
+    padding-top: 12px;
    }
 
-   .hero {
-    padding: 22px;
-    border-radius: 28px;
+   .hero,
+   .card {
+    border-radius: 20px;
    }
 
-   .art {
+   .row {
     grid-template-columns: 1fr;
-   }
-
-   .card,
-   .panel {
-    border-radius: 24px;
-   }
-
-   h1 {
-    max-width: 100%;
+    gap: 6px;
    }
   }
  </style>
 </head>
 <body>
- <main class="shell">
+ <main class="wrap">
   <section class="hero" aria-label="QR registration profile summary">
-   <div>
-    <p class="eyebrow">Public registration profile</p>
-    <h1>{{FULL_NAME}}</h1>
-    <p class="lede">This public profile was revealed after a QR scan, and the first scan timestamp has been recorded for verification.</p>
+   <p class="eyebrow">Public registration profile</p>
+   <h1>{{FULL_NAME}}</h1>
+   <p class="lede">This profile was opened from a scanned QR code and the first scan has been recorded automatically.</p>
 
-    <div class="chips" aria-label="Profile summary badges">
-     <span class="chip lime">Scan confirmed</span>
-     <span class="chip orange">{{REGISTRATION_STATUS}}</span>
-     <span class="chip dark">{{SCAN_SUMMARY}}</span>
-    </div>
+   <div class="chips" aria-label="Profile summary badges">
+    <span class="chip lime">Scan confirmed</span>
+    <span class="chip orange">{{REGISTRATION_STATUS}}</span>
+    <span class="chip soft">{{SCAN_SUMMARY}}</span>
    </div>
-
-   <aside class="art" aria-label="Profile highlights">
-    <div class="monogram" aria-hidden="true">{{INITIALS}}</div>
-    <div class="panel light">
-     <span class="label">Organization</span>
-     <strong>{{ORGANIZATION}}</strong>
-    </div>
-    <div class="panel orange">
-     <span class="label">First scanned at</span>
-     <strong>{{SCANNED_AT}}</strong>
-    </div>
-   </aside>
   </section>
 
-  <section class="details-grid" aria-label="Registration details">
-   <article class="card">
-    <h2>Identity</h2>
-    <div class="field">
-     <span class="label">First Name</span>
-     <span class="value">{{FIRST_NAME}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Last Name</span>
-     <span class="value">{{LAST_NAME}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Job Title</span>
-     <span class="value">{{JOB_TITLE}}</span>
-    </div>
-   </article>
-
-   <article class="card dark">
-    <h2>Registration</h2>
-    <div class="field">
-     <span class="label">MDA Sector</span>
-     <span class="value">{{MDA_SECTOR}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Registration Status</span>
-     <span class="value">{{REGISTRATION_STATUS}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Scan Count</span>
-     <span class="value">{{SCAN_COUNT}}</span>
-    </div>
-   </article>
+  <section class="card" aria-label="Registration details">
+   <div class="row">
+    <div class="label">First Name</div>
+    <div class="value">{{FIRST_NAME}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Last Name</div>
+    <div class="value">{{LAST_NAME}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Job Title</div>
+    <div class="value">{{JOB_TITLE}}</div>
+   </div>
+   <div class="row">
+    <div class="label">MDA Sector</div>
+    <div class="value">{{MDA_SECTOR}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Organization</div>
+    <div class="value">{{ORGANIZATION}}</div>
+   </div>
+   <div class="row">
+    <div class="label">Registration Status</div>
+    <div class="value">{{REGISTRATION_STATUS}}</div>
+   </div>
+   <div class="row">
+    <div class="label">First Scanned At</div>
+    <div class="value">{{SCANNED_AT}}</div>
+   </div>
   </section>
 
-  <section class="details" aria-label="Scan timeline and organization">
-   <article class="card dark">
-    <h2>Scan timeline</h2>
-    <div class="field">
-     <span class="label">First scanned at</span>
-     <span class="value">{{SCANNED_AT}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Last scanned at</span>
-     <span class="value">{{LAST_SCANNED_AT}}</span>
-    </div>
-   </article>
-
-   <article class="card">
-    <h2>Organization</h2>
-    <div class="field">
-     <span class="label">Organization</span>
-     <span class="value">{{ORGANIZATION}}</span>
-    </div>
-    <div class="field">
-     <span class="label">Scan summary</span>
-     <span class="value">{{SCAN_SUMMARY}}</span>
-    </div>
-   </article>
-  </section>
-
-  <p class="footer">QR access verified for <strong>{{FULL_NAME}}</strong>. Scan confirmation is captured automatically when this page opens.</p>
+  <p class="note">QR access verified for <strong>{{FULL_NAME}}</strong>. Scan confirmation is captured automatically when this page opens.</p>
  </main>
 </body>
 </html>

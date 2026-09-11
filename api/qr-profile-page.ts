@@ -33,12 +33,6 @@ function formatTimestamp(value: string | null): string {
  return `${formatted} UTC`
 }
 
-function buildInitials(firstName: string, lastName: string): string {
- const first = firstName.trim().charAt(0)
- const last = lastName.trim().charAt(0)
- return `${first}${last}`.toUpperCase() || "QR"
-}
-
 function buildScanSummary(scanCount: number): string {
  if(scanCount <= 0){
   return "Awaiting scan"
@@ -68,8 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   html = html
    .split("{{FULL_NAME}}")
    .join(escapeHtml(fullName))
-   .split("{{INITIALS}}")
-   .join(escapeHtml(buildInitials(record.firstName, record.lastName)))
    .split("{{FIRST_NAME}}")
    .join(escapeHtml(record.firstName))
    .split("{{LAST_NAME}}")
