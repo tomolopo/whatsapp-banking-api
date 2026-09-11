@@ -20,9 +20,10 @@ This project is a WhatsApp-first banking demo built as a set of Vercel API route
 ### 3. QR registration flow
 
 - [api/qr-generate.ts](../api/qr-generate.ts) stores the submitted registration in Supabase and creates a unique QR code.
-- [lib/qr/registrations.ts](../lib/qr/registrations.ts) handles token generation, inserts, and QR profile lookups.
-- [api/qr-profile-page.ts](../api/qr-profile-page.ts) renders the public profile page when the QR is scanned.
-- The public profile shows First Name, Last Name, Job Title, MDA Sector, Registration Status, and Organization.
+- [lib/qr/registrations.ts](../lib/qr/registrations.ts) handles token generation, inserts, QR lookup, and scan tracking.
+- [api/qr-code.ts](../api/qr-code.ts) returns the PNG image for any stored QR token.
+- [api/qr-profile-page.ts](../api/qr-profile-page.ts) renders the public profile page and records the first scan timestamp when it opens.
+- The public profile shows First Name, Last Name, Job Title, MDA Sector, Registration Status, Organization, and scan history.
 
 ### 4. Perform banking actions
 

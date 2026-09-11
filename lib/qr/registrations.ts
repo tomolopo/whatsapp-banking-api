@@ -18,6 +18,9 @@ export interface QrRegistrationInput {
 export interface QrRegistrationRecord extends QrRegistrationInput {
  id: string
  qrToken: string
+ scannedAt: string | null
+ lastScannedAt: string | null
+ scanCount: number
  createdAt: string
  updatedAt: string
 }
@@ -31,6 +34,9 @@ type QrRegistrationRow = {
  mda_sector: string
  registration_status: string
  organization: string
+ scanned_at: string | null
+ last_scanned_at: string | null
+ scan_count: number
  created_at: string
  updated_at: string
 }
@@ -61,6 +67,9 @@ function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
   mdaSector: row.mda_sector,
   registrationStatus: row.registration_status,
   organization: row.organization,
+  scannedAt: row.scanned_at,
+  lastScannedAt: row.last_scanned_at,
+  scanCount: row.scan_count,
   createdAt: row.created_at,
   updatedAt: row.updated_at
  }
@@ -82,7 +91,7 @@ async function insertQrRegistration(input: QrRegistrationInput, qrToken: string)
  const { data, error } = await supabase
   .from(TABLE)
   .insert([toDbRow(input, qrToken)])
-  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, created_at, updated_at")
+  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
   .single()
 
  if(error){
@@ -117,12 +126,24 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
 export async function getQrRegistrationByToken(qrToken: string): Promise<QrRegistrationRecord | null> {
  const { data, error } = await supabase
   .from(TABLE)
-  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, created_at, updated_at")
+  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
   .eq("qr_token", qrToken)
   .maybeSingle()
 
  if(error){
   throw new AppError("QR_REGISTRATION_LOOKUP_FAILED", error.message, 500)
+ }
+
+ return data ? mapRow(data as QrRegistrationRow) : null
+}
+
+export async function recordQrRegistrationScan(qrToken: string): Promise<QrRegistrationRecord | null> {
+ const { data, error } = await supabase.rpc("record_qr_registration_scan", {
+  p_qr_token: qrToken
+ })
+
+ if(error){
+  throw new AppError("QR_REGISTRATION_SCAN_FAILED", error.message, 500)
  }
 
  return data ? mapRow(data as QrRegistrationRow) : null

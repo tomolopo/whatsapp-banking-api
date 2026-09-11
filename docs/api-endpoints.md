@@ -142,12 +142,17 @@ Typical response fields include `transferLink` and `expiresIn`.
 ### `/api/qr-generate`
 
 Accepts a completed QR registration, stores it in Supabase, and returns the generated QR payload.
-Typical response fields include `profileUrl`, `qrDataUrl`, and the stored registration metadata.
+Typical response fields include `profileUrl`, `qrCodeUrl`, `qrDataUrl`, the stored registration metadata, and the initial scan tracking fields (`scannedAt`, `lastScannedAt`, `scanCount`).
+
+### `/api/qr-code`
+
+Returns the PNG image for a generated QR token.
+Use `token` in the query string to fetch the image later.
 
 ### `/api/qr-profile-page`
 
-Looks up the QR token and renders the public profile page.
-The page displays First Name, Last Name, Job Title, MDA Sector, Registration Status, and Organization.
+Looks up the QR token, records the scan timestamp, and renders the public profile page.
+The page displays First Name, Last Name, Job Title, MDA Sector, Registration Status, Organization, and the scan timeline.
 
 ## Pages
 
