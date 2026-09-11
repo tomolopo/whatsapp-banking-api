@@ -5,42 +5,297 @@
  <meta name="viewport" content="width=device-width,initial-scale=1" />
  <title>QR Registration</title>
  <style>
-  body { font-family: system-ui, sans-serif; padding: 24px; max-width: 560px; margin: 0 auto; }
-  h1 { margin-bottom: 0.5rem; }
-  p { line-height: 1.5; }
-  form { display: grid; gap: 12px; margin-top: 20px; }
-  input { padding: 10px 12px; font-size: 16px; width: 100%; box-sizing: border-box; }
-  button { padding: 12px 16px; font-size: 16px; cursor: pointer; }
-  #msg { margin-top: 16px; }
-  .err { color: #b91c1c; }
-  .ok { color: #15803d; }
-  .result { margin-top: 20px; display: none; }
-  .result img { max-width: 240px; display: block; border: 1px solid #e5e7eb; padding: 12px; background: #fff; }
-  .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; margin-top: 10px; }
-  .value { word-break: break-word; }
+  :root {
+   color-scheme: light;
+   --bg: #f4f7f4;
+   --card: #ffffff;
+   --ink: #123126;
+   --muted: #60716b;
+   --line: #dbe5de;
+   --accent: #166b57;
+   --accent-2: #d9ff47;
+   --warning: #b45309;
+   --error: #b91c1c;
+   --shadow: 0 20px 60px rgba(10, 31, 25, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+   margin: 0;
+   min-height: 100vh;
+   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+   background:
+    radial-gradient(circle at top left, rgba(217, 255, 71, 0.24), transparent 20%),
+    linear-gradient(180deg, #eef5ef, #f9fbfa 40%, #f4f7f4 100%);
+   color: var(--ink);
+  }
+
+  .wrap {
+   width: min(720px, calc(100% - 24px));
+   margin: 0 auto;
+   padding: 24px 0 40px;
+  }
+
+  .hero {
+   background: linear-gradient(145deg, #11453c, #0a2f29);
+   color: white;
+   border-radius: 28px;
+   padding: 26px;
+   box-shadow: var(--shadow);
+   position: relative;
+   overflow: hidden;
+  }
+
+  .hero::after {
+   content: "";
+   position: absolute;
+   right: -80px;
+   top: -80px;
+   width: 220px;
+   height: 220px;
+   border-radius: 50%;
+   background: radial-gradient(circle, rgba(217, 255, 71, 0.26), transparent 70%);
+  }
+
+  h1 {
+   margin: 0;
+   font-size: clamp(2rem, 4vw, 3rem);
+   line-height: 1.02;
+   color: var(--accent-2);
+  }
+
+  .hero p {
+   margin: 12px 0 0;
+   max-width: 58ch;
+   line-height: 1.65;
+   color: #e6f4ed;
+  }
+
+  .form-card {
+   margin-top: 18px;
+   background: var(--card);
+   border-radius: 28px;
+   padding: 22px;
+   border: 1px solid rgba(18, 49, 38, 0.08);
+   box-shadow: var(--shadow);
+  }
+
+  form {
+   display: grid;
+   gap: 14px;
+  }
+
+  .grid {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: 14px;
+  }
+
+  label {
+   display: grid;
+   gap: 7px;
+   font-size: 0.88rem;
+   font-weight: 700;
+   color: var(--muted);
+  }
+
+  input {
+   width: 100%;
+   border: 1px solid var(--line);
+   border-radius: 16px;
+   padding: 14px 16px;
+   font: inherit;
+   color: var(--ink);
+   background: #fbfdfc;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  input:focus {
+   outline: none;
+   border-color: rgba(22, 107, 87, 0.6);
+   box-shadow: 0 0 0 4px rgba(22, 107, 87, 0.12);
+  }
+
+  .actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-top: 4px;
+  }
+
+  button {
+   appearance: none;
+   border: 0;
+   border-radius: 999px;
+   padding: 14px 18px;
+   font: inherit;
+   font-weight: 800;
+   cursor: pointer;
+  }
+
+  .primary {
+   background: linear-gradient(145deg, #1d7a63, #11453c);
+   color: white;
+   box-shadow: 0 12px 28px rgba(17, 69, 60, 0.2);
+  }
+
+  .secondary {
+   background: rgba(22, 107, 87, 0.08);
+   color: var(--accent);
+  }
+
+  #msg {
+   margin: 16px 0 0;
+   font-weight: 700;
+  }
+
+  .err { color: var(--error); }
+  .ok { color: #16794d; }
+
+  .result {
+   margin-top: 18px;
+   display: none;
+   background: white;
+   border-radius: 28px;
+   padding: 22px;
+   border: 1px solid var(--line);
+   box-shadow: var(--shadow);
+  }
+
+  .result-inner {
+   display: grid;
+   grid-template-columns: 220px minmax(0, 1fr);
+   gap: 18px;
+   align-items: center;
+  }
+
+  .qr-shell {
+   display: grid;
+   place-items: center;
+   background: #f8faf8;
+   border-radius: 24px;
+   padding: 18px;
+   border: 1px dashed #c6d4cc;
+  }
+
+  .result img {
+   width: 100%;
+   max-width: 220px;
+   display: block;
+  }
+
+  .meta {
+   display: grid;
+   gap: 10px;
+  }
+
+  .label {
+   font-size: 0.76rem;
+   text-transform: uppercase;
+   letter-spacing: 0.08em;
+   color: var(--muted);
+  }
+
+  .value {
+   word-break: break-word;
+   line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+   .grid,
+   .result-inner {
+    grid-template-columns: 1fr;
+   }
+
+   .wrap {
+    width: min(100% - 16px, 720px);
+    padding-top: 12px;
+   }
+
+   .hero,
+   .form-card,
+   .result {
+    border-radius: 22px;
+   }
+  }
  </style>
 </head>
 <body>
- <h1>QR Registration</h1>
- <p>Complete the registration form to generate a unique QR code. Scanning the QR opens the public profile page.</p>
+ <main class="wrap">
+  <section class="hero">
+   <h1>QR Registration</h1>
+   <p>Complete the form to generate a unique QR code. If the same phone number is used again, the API will return that a QR has already been generated for it.</p>
+  </section>
 
- <form id="form">
-  <input id="firstName" placeholder="First Name" required />
-  <input id="lastName" placeholder="Last Name" required />
-  <input id="jobTitle" placeholder="Job Title" required />
-  <input id="mdaSector" placeholder="MDA Sector" required />
-  <input id="registrationStatus" placeholder="Registration Status" required />
-  <input id="organization" placeholder="Organization" required />
-  <button type="submit">Generate QR</button>
- </form>
+  <section class="form-card">
+   <form id="form">
+    <label>
+     Phone Number
+     <input id="phoneNumber" type="tel" placeholder="2348012345678" required />
+    </label>
 
- <p id="msg"></p>
+    <div class="grid">
+     <label>
+      First Name
+      <input id="firstName" placeholder="First Name" required />
+     </label>
+     <label>
+      Last Name
+      <input id="lastName" placeholder="Last Name" required />
+     </label>
+    </div>
 
- <div id="result" class="result">
-  <img id="qrImage" alt="Generated QR code" />
-  <div class="label">Profile URL</div>
-  <div class="value" id="profileUrl"></div>
- </div>
+    <div class="grid">
+     <label>
+      Job Title
+      <input id="jobTitle" placeholder="Job Title" required />
+     </label>
+     <label>
+      MDA Sector
+      <input id="mdaSector" placeholder="MDA Sector" required />
+     </label>
+    </div>
+
+    <div class="grid">
+     <label>
+      Registration Status
+      <input id="registrationStatus" placeholder="Registration Status" required />
+     </label>
+     <label>
+      Organization
+      <input id="organization" placeholder="Organization" required />
+     </label>
+    </div>
+
+    <div class="actions">
+     <button class="primary" type="submit">Generate QR</button>
+     <button class="secondary" type="reset">Clear form</button>
+    </div>
+   </form>
+
+   <p id="msg"></p>
+  </section>
+
+  <section id="result" class="result">
+   <div class="result-inner">
+    <div class="qr-shell">
+     <img id="qrImage" alt="Generated QR code" />
+    </div>
+
+    <div class="meta">
+     <div>
+      <div class="label">Profile URL</div>
+      <div class="value" id="profileUrl"></div>
+     </div>
+     <div>
+      <div class="label">QR Image URL</div>
+      <div class="value" id="qrCodeUrl"></div>
+     </div>
+    </div>
+   </div>
+  </section>
+ </main>
 
  <script>
   (function(){
@@ -49,7 +304,17 @@
    var result = document.getElementById("result")
    var qrImage = document.getElementById("qrImage")
    var profileUrl = document.getElementById("profileUrl")
+   var qrCodeUrl = document.getElementById("qrCodeUrl")
    var apiBase = "{{API_BASE_URL}}"
+
+   form.addEventListener("reset", function(){
+    msg.className = ""
+    msg.textContent = ""
+    result.style.display = "none"
+    qrImage.removeAttribute("src")
+    profileUrl.textContent = ""
+    qrCodeUrl.textContent = ""
+   })
 
    form.addEventListener("submit", async function(e){
     e.preventDefault()
@@ -62,6 +327,7 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+       phoneNumber: document.getElementById("phoneNumber").value,
        firstName: document.getElementById("firstName").value,
        lastName: document.getElementById("lastName").value,
        jobTitle: document.getElementById("jobTitle").value,
@@ -81,6 +347,7 @@
      msg.textContent = "QR generated successfully"
      qrImage.src = data.data.qrDataUrl
      profileUrl.textContent = data.data.profileUrl
+     qrCodeUrl.textContent = data.data.qrCodeUrl
      result.style.display = "block"
     }catch(error){
      msg.className = "err"

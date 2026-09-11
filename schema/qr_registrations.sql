@@ -2,7 +2,8 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.qr_registrations (
   id uuid primary key default gen_random_uuid(),
-  qr_token text not null unique,
+  qr_token text not null,
+  phone_number text not null,
   first_name text not null,
   last_name text not null,
   job_title text not null,
@@ -13,7 +14,9 @@ create table if not exists public.qr_registrations (
   last_scanned_at timestamptz,
   scan_count integer not null default 0,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint qr_registrations_qr_token_key unique (qr_token),
+  constraint qr_registrations_phone_number_key unique (phone_number)
 );
 
 create or replace function public.set_qr_registrations_updated_at()

@@ -7,6 +7,7 @@ const DEFAULT_BASE_URL = "https://whatsapp-banking-api.vercel.app"
 const MAX_TOKEN_ATTEMPTS = 5
 
 export interface QrRegistrationInput {
+ phoneNumber: string
  firstName: string
  lastName: string
  jobTitle: string
@@ -28,6 +29,7 @@ export interface QrRegistrationRecord extends QrRegistrationInput {
 type QrRegistrationRow = {
  id: string
  qr_token: string
+ phone_number: string
  first_name: string
  last_name: string
  job_title: string
@@ -61,6 +63,7 @@ function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
  return {
   id: row.id,
   qrToken: row.qr_token,
+  phoneNumber: row.phone_number,
   firstName: row.first_name,
   lastName: row.last_name,
   jobTitle: row.job_title,
@@ -78,6 +81,7 @@ function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
 function toDbRow(input: QrRegistrationInput, qrToken: string){
  return {
   qr_token: qrToken,
+  phone_number: input.phoneNumber,
   first_name: input.firstName,
   last_name: input.lastName,
   job_title: input.jobTitle,
@@ -91,7 +95,7 @@ async function insertQrRegistration(input: QrRegistrationInput, qrToken: string)
  const { data, error } = await supabase
   .from(TABLE)
   .insert([toDbRow(input, qrToken)])
-  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
+  .select("id, qr_token, phone_number, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
   .single()
 
  if(error){
@@ -112,8 +116,12 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
   try{
    return await insertQrRegistration(input, qrToken)
   }catch(error){
-   const err = error as { code?: string }
+   const err = error as { code?: string; constraint?: string; message?: string }
    if(err.code === "23505"){
+    if(err.constraint === "qr_registrations_phone_number_key" || (err.message || "").includes("phone_number")){
+     throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number", 409)
+    }
+
     continue
    }
    throw error
@@ -126,7 +134,7 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
 export async function getQrRegistrationByToken(qrToken: string): Promise<QrRegistrationRecord | null> {
  const { data, error } = await supabase
   .from(TABLE)
-  .select("id, qr_token, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
+  .select("id, qr_token, phone_number, first_name, last_name, job_title, mda_sector, registration_status, organization, scanned_at, last_scanned_at, scan_count, created_at, updated_at")
   .eq("qr_token", qrToken)
   .maybeSingle()
 

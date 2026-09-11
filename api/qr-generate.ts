@@ -34,6 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {}
 
   const input: QrRegistrationInput = {
+   phoneNumber: readField(body.phoneNumber, "phoneNumber"),
    firstName: readField(body.firstName, "firstName"),
    lastName: readField(body.lastName, "lastName"),
    jobTitle: readField(body.jobTitle, "jobTitle"),

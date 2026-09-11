@@ -142,7 +142,8 @@ Typical response fields include `transferLink` and `expiresIn`.
 ### `/api/qr-generate`
 
 Accepts a completed QR registration, stores it in Supabase, and returns the generated QR payload.
-Typical response fields include `profileUrl`, `qrCodeUrl`, `qrDataUrl`, the stored registration metadata, and the initial scan tracking fields (`scannedAt`, `lastScannedAt`, `scanCount`).
+The request must include `phoneNumber`, and each phone number can only generate one QR registration.
+Typical response fields include `profileUrl`, `qrCodeUrl`, `qrDataUrl`, the stored registration metadata, and the initial scan tracking fields (`scannedAt`, `lastScannedAt`, `scanCount`). If the same phone number is submitted again, the API returns `QR_ALREADY_GENERATED`.
 
 ### `/api/qr-code`
 
