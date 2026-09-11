@@ -62,7 +62,7 @@ export function buildQrProfileUrl(qrToken: string){
 }
 
 export function buildQrCodeUrl(qrToken: string){
- return `${normalizeBaseUrl()}/api/qr-code?token=${encodeURIComponent(qrToken)}`
+ return `${normalizeBaseUrl()}/api/qr-code.jpg?token=${encodeURIComponent(qrToken)}`
 }
 
 function createQrToken(){

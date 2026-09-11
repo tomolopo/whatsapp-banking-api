@@ -209,6 +209,17 @@ const openapi = {
     }
    }
   },
+  "/api/qr-code.jpg": {
+   get: {
+    summary: "Fetch QR code image",
+    responses: {
+     "200": { description: "PNG image" },
+     "400": { description: "Invalid request" },
+     "404": { description: "QR code not found" },
+     "500": { description: "Server error" }
+    }
+   }
+  },
   "/api/qr-profile-page": {
    get: {
     summary: "QR profile page",

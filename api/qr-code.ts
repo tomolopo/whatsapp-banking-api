@@ -13,6 +13,18 @@ function wantsImage(req: VercelRequest): boolean {
   return true
  }
 
+ const pathname = (() => {
+  try{
+   return new URL(req.url || "", "http://localhost").pathname.toLowerCase()
+  }catch{
+   return ""
+  }
+ })()
+
+ if(pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")){
+  return true
+ }
+
  const accept = String(req.headers.accept || "").toLowerCase()
  const fetchDest = String(req.headers["sec-fetch-dest"] || "").toLowerCase()
 

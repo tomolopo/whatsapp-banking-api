@@ -1283,22 +1283,18 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/qr-code?token={{qrToken}}&output=image",
+              "raw": "{{baseUrl}}/api/qr-code.jpg?token={{qrToken}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "qr-code"
+                "qr-code.jpg"
               ],
               "query": [
                 {
                   "key": "token",
                   "value": "{{qrToken}}"
-                },
-                {
-                  "key": "output",
-                  "value": "image"
                 }
               ]
             },
