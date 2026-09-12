@@ -138,7 +138,7 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
    const err = error as { code?: string; constraint?: string; message?: string }
    if(err.code === "23505"){
     if(err.constraint === "qr_registrations_phone_number_key" || (err.message || "").includes("phone_number")){
-     throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number", 409)
+     throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number. Only one QR code per phone number is allowed.", 409)
     }
 
     continue
