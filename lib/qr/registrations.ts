@@ -118,6 +118,10 @@ async function insertQrRegistration(input: QrRegistrationInput, qrToken: string)
   .single()
 
  if(error){
+  if(error.code === "23505" && ((error.constraint || "") === "qr_registrations_phone_number_key" || (error.message || "").toLowerCase().includes("phone_number"))){
+   throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number. Only one QR code per phone number is allowed.", 409)
+  }
+
   throw new AppError("QR_REGISTRATION_WRITE_FAILED", error.message, 500)
  }
 
