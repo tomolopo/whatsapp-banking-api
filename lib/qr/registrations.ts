@@ -8,6 +8,21 @@ const MAX_TOKEN_ATTEMPTS = 5
 
 export interface QrRegistrationInput {
  phoneNumber: string
+ email?: string
+ firstName?: string
+ lastName?: string
+ jobTitle?: string
+ mdaSector?: string
+ confirmationStatus?: string
+ registrationStatus?: string
+ organization?: string
+}
+
+export interface QrRegistrationRecord {
+ id: string
+ qrToken: string
+ phoneNumber: string
+ attendeeId: string
  email: string
  firstName: string
  lastName: string
@@ -16,12 +31,6 @@ export interface QrRegistrationInput {
  confirmationStatus: string
  registrationStatus: string
  organization: string
-}
-
-export interface QrRegistrationRecord extends QrRegistrationInput {
- id: string
- qrToken: string
- attendeeId: string
  checkedIn: boolean
  checkInTime: string | null
  scannedAt: string | null
@@ -69,6 +78,11 @@ function createQrToken(){
  return `qr_${randomUUID().replace(/-/g, "")}`
 }
 
+function cleanText(value: string | undefined, fallback = ""): string {
+ const trimmed = typeof value === "string" ? value.trim() : ""
+ return trimmed || fallback
+}
+
 function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
  return {
   id: row.id,
@@ -81,7 +95,7 @@ function mapRow(row: QrRegistrationRow): QrRegistrationRecord {
   jobTitle: row.job_title,
   mdaSector: row.mda_sector,
   confirmationStatus: row.confirmation_status || "",
-  registrationStatus: row.registration_status,
+  registrationStatus: row.registration_status || "Pending",
   organization: row.organization,
   checkedIn: row.checked_in,
   checkInTime: row.check_in_time,
@@ -97,14 +111,14 @@ function toDbRow(input: QrRegistrationInput, qrToken: string){
  return {
   qr_token: qrToken,
   phone_number: input.phoneNumber,
-  email: input.email,
-  first_name: input.firstName,
-  last_name: input.lastName,
-  job_title: input.jobTitle,
-  mda_sector: input.mdaSector,
-  confirmation_status: input.confirmationStatus,
-  registration_status: input.registrationStatus,
-  organization: input.organization
+  email: cleanText(input.email),
+  first_name: cleanText(input.firstName),
+  last_name: cleanText(input.lastName),
+  job_title: cleanText(input.jobTitle),
+  mda_sector: cleanText(input.mdaSector),
+  confirmation_status: cleanText(input.confirmationStatus),
+  registration_status: cleanText(input.registrationStatus, "Pending"),
+  organization: cleanText(input.organization)
  }
 }
 
@@ -118,7 +132,8 @@ async function insertQrRegistration(input: QrRegistrationInput, qrToken: string)
   .single()
 
  if(error){
-  if(error.code === "23505" && ((error.constraint || "") === "qr_registrations_phone_number_key" || (error.message || "").toLowerCase().includes("phone_number"))){
+  const message = error.message || ""
+  if(error.code === "23505" && message.toLowerCase().includes("qr_registrations_phone_number_key")){
    throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number. Only one QR code per phone number is allowed.", 409)
   }
 
@@ -139,14 +154,11 @@ export async function createQrRegistration(input: QrRegistrationInput): Promise<
   try{
    return await insertQrRegistration(input, qrToken)
   }catch(error){
-   const err = error as { code?: string; constraint?: string; message?: string }
+   const err = error as { code?: string; message?: string }
    if(err.code === "23505"){
-    if(err.constraint === "qr_registrations_phone_number_key" || (err.message || "").includes("phone_number")){
-     throw new AppError("QR_ALREADY_GENERATED", "A QR code has already been generated for this phone number. Only one QR code per phone number is allowed.", 409)
-    }
-
     continue
    }
+
    throw error
   }
  }

@@ -142,7 +142,7 @@ Typical response fields include `transferLink` and `expiresIn`.
 ### `/api/qr-generate`
 
 Accepts a completed QR registration, stores it in Supabase, and returns the generated QR payload.
-The request must include `phoneNumber`, and each successful request gets the next attendee ID automatically in the form `MDA-0001`, `MDA-0002`, and so on. Each phone number can only generate one QR registration.
+The request must include `phoneNumber`. All other fields are optional and will be saved when provided; missing values are stored with safe defaults. Each successful request gets the next attendee ID automatically in the form `MDA-0001`, `MDA-0002`, and so on. Each phone number can only generate one QR registration.
 Typical response fields include `attendeeId`, `profileUrl`, `qrCodeUrl`, `qrDataUrl`, the stored registration metadata, and the initial scan tracking fields (`scannedAt`, `lastScannedAt`, `scanCount`). The `qrCodeUrl` now uses a `.jpg` image route for easier sharing in WhatsApp. If the same phone number is submitted again, the API returns `QR_ALREADY_GENERATED`.
 
 ### `/api/qr-code`

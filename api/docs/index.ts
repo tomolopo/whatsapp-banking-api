@@ -190,6 +190,28 @@ const openapi = {
   "/api/qr-generate": {
    post: {
     summary: "Generate QR registration",
+    requestBody: {
+     required: true,
+     content: {
+      "application/json": {
+       schema: {
+        type: "object",
+        required: ["phoneNumber"],
+        properties: {
+         phoneNumber: { type: "string", example: "2348012345678" },
+         email: { type: "string", example: "jane@example.com" },
+         firstName: { type: "string", example: "Jane" },
+         lastName: { type: "string", example: "Doe" },
+         jobTitle: { type: "string", example: "Director" },
+         mdaSector: { type: "string", example: "Public Service" },
+         confirmationStatus: { type: "string", example: "Confirmed" },
+         registrationStatus: { type: "string", example: "Approved" },
+         organization: { type: "string", example: "Ministry of Example" }
+        }
+       }
+      }
+     }
+    },
     responses: {
      "200": { description: "Successful response" },
      "400": { description: "Invalid request" },

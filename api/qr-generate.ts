@@ -10,7 +10,7 @@ import {
  type QrRegistrationInput
 } from "../lib/qr/registrations"
 
-function readField(value: unknown, name: string): string {
+function readRequiredField(value: unknown, name: string): string {
  if(typeof value !== "string"){
   throw new AppError("BAD_REQUEST", `${name} is required`, 400)
  }
@@ -21,6 +21,15 @@ function readField(value: unknown, name: string): string {
  }
 
  return trimmed
+}
+
+function readOptionalField(value: unknown): string | undefined {
+ if(typeof value !== "string"){
+  return undefined
+ }
+
+ const trimmed = value.trim()
+ return trimmed ? trimmed : undefined
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse){
@@ -34,15 +43,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse){
   const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {}
 
   const input: QrRegistrationInput = {
-   phoneNumber: readField(body.phoneNumber, "phoneNumber"),
-   email: readField(body.email, "email"),
-   firstName: readField(body.firstName, "firstName"),
-   lastName: readField(body.lastName, "lastName"),
-   jobTitle: readField(body.jobTitle, "jobTitle"),
-   mdaSector: readField(body.mdaSector, "mdaSector"),
-   confirmationStatus: readField(body.confirmationStatus, "confirmationStatus"),
-   registrationStatus: readField(body.registrationStatus, "registrationStatus"),
-   organization: readField(body.organization, "organization")
+   phoneNumber: readRequiredField(body.phoneNumber, "phoneNumber"),
+   email: readOptionalField(body.email),
+   firstName: readOptionalField(body.firstName),
+   lastName: readOptionalField(body.lastName),
+   jobTitle: readOptionalField(body.jobTitle),
+   mdaSector: readOptionalField(body.mdaSector),
+   confirmationStatus: readOptionalField(body.confirmationStatus),
+   registrationStatus: readOptionalField(body.registrationStatus),
+   organization: readOptionalField(body.organization)
   }
 
   const record = await createQrRegistration(input)
